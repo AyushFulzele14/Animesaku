@@ -6,31 +6,37 @@ import { api } from '../lib/api';
 import { formatINR } from '../utils/currency';
 
 interface OrderItem {
-  product: { id: string; title: string };
+  product: { id: string; title: string } | null;
   quantity: number;
   price: number;
 }
 
 interface AdminOrder {
   _id: string;
-  user: { name: string; email: string };
+  user: { name: string; email: string } | null;
   items: OrderItem[];
-  orderStatus: 'Processing' | 'Confirmed' | 'Shipped' | 'Delivered' | 'Cancelled';
+  orderStatus: 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled' | 'Returned';
   paymentInfo: { method: string; status: string };
   totals: { grandTotal: number };
   shippingAddress: { street: string; city: string };
   createdAt: string;
   trackingNumber?: string;
+  returnRequest?: {
+    reason: string;
+    status: 'None' | 'Requested' | 'Approved' | 'Rejected';
+    requestedAt?: string;
+    actionedAt?: string;
+  };
 }
 
-const statusOptions = ['Processing', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled'];
+const statusOptions = ['Processing', 'Shipped', 'Delivered', 'Cancelled', 'Returned'];
 
 const statusColors: Record<string, string> = {
   Processing: 'bg-yellow-500/20 border-yellow-500',
-  Confirmed: 'bg-blue-500/20 border-blue-500',
   Shipped: 'bg-purple-500/20 border-purple-500',
   Delivered: 'bg-green-500/20 border-green-500',
   Cancelled: 'bg-red-500/20 border-red-500',
+  Returned: 'bg-blue-500/20 border-blue-500',
 };
 
 export function AdminOrderDashboard() {
@@ -91,6 +97,20 @@ export function AdminOrderDashboard() {
     }
   };
 
+  const handleReturnAction = async (orderId: string, action: 'Approved' | 'Rejected') => {
+    setUpdatingOrder(orderId);
+    try {
+      const response = await api.patch<AdminOrder>(`/orders/admin/${orderId}/handle-return`, { action });
+      setOrders(orders.map(o => 
+        o._id === orderId ? response : o
+      ));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to handle return request');
+    } finally {
+      setUpdatingOrder(null);
+    }
+  };
+
   if (!isAdmin) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -138,7 +158,7 @@ export function AdminOrderDashboard() {
             <p className="text-silver-white/60 text-sm">Total Orders</p>
             <p className="text-2xl font-bold text-primary-red">{orders.length}</p>
           </div>
-          {['Processing', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled'].map(status => (
+          {['Processing', 'Shipped', 'Delivered', 'Cancelled', 'Returned'].map(status => (
             <div key={status} className="bg-matte-black border border-primary-red/20 rounded-2xl p-4">
               <p className="text-silver-white/60 text-sm">{status}</p>
               <p className="text-2xl font-bold text-silver-white">
@@ -182,12 +202,12 @@ export function AdminOrderDashboard() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <p className="font-semibold">Order #{order._id.slice(-8)}</p>
-                      <span className={`px-2 py-1 rounded-full text-xs font-semibold border ${statusColors[order.orderStatus]}`}>
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold border ${statusColors[order.orderStatus] || 'bg-gray-500/20 border-gray-500'}`}>
                         {order.orderStatus}
                       </span>
                     </div>
                     <p className="text-silver-white/60 text-sm">
-                      {order.user.name} • {order.items.length} items • {new Date(order.createdAt).toLocaleDateString()}
+                      {order.user?.name || 'Deleted User'} • {order.items.length} items • {new Date(order.createdAt).toLocaleDateString()}
                     </p>
                   </div>
                   <div className="text-right mr-4">
@@ -212,8 +232,8 @@ export function AdminOrderDashboard() {
                     {/* Customer Info */}
                     <div>
                       <h4 className="font-semibold text-silver-white mb-2">Customer</h4>
-                      <p className="text-silver-white">{order.user.name}</p>
-                      <p className="text-silver-white/60 text-sm">{order.user.email}</p>
+                      <p className="text-silver-white">{order.user?.name || 'Deleted User'}</p>
+                      <p className="text-silver-white/60 text-sm">{order.user?.email || 'N/A'}</p>
                     </div>
 
                     {/* Items */}
@@ -222,7 +242,7 @@ export function AdminOrderDashboard() {
                       <div className="space-y-2">
                         {order.items.map((item, idx) => (
                           <div key={idx} className="flex justify-between text-sm bg-black/70 p-2 rounded-lg">
-                            <span className="text-silver-white">{item.product.title} x{item.quantity}</span>
+                            <span className="text-silver-white">{item.product?.title || 'Unknown Product'} x{item.quantity}</span>
                             <span className="text-primary-red">{formatINR(item.price * item.quantity)}</span>
                           </div>
                         ))}
@@ -235,6 +255,45 @@ export function AdminOrderDashboard() {
                       <p className="text-silver-white text-sm">{order.shippingAddress.street}</p>
                       <p className="text-silver-white text-sm">{order.shippingAddress.city}</p>
                     </div>
+
+                    {/* Return Action Panel */}
+                    {order.returnRequest && order.returnRequest.status === 'Requested' && (
+                      <div className="bg-primary-red/10 border border-primary-red/30 rounded-2xl p-4 space-y-3">
+                        <p className="text-sm font-semibold text-primary-red">Return & Refund Requested</p>
+                        <p className="text-sm text-silver-white/80"><span className="font-semibold text-silver-white">Reason:</span> {order.returnRequest.reason}</p>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            disabled={updatingOrder === order._id}
+                            onClick={() => handleReturnAction(order._id, 'Approved')}
+                            className="bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
+                          >
+                            Approve Return & Refund
+                          </button>
+                          <button
+                            type="button"
+                            disabled={updatingOrder === order._id}
+                            onClick={() => handleReturnAction(order._id, 'Rejected')}
+                            className="bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
+                          >
+                            Reject Request
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {order.returnRequest && order.returnRequest.status !== 'None' && order.returnRequest.status !== 'Requested' && (
+                      <div className="bg-matte-black border border-silver-white/10 rounded-2xl p-4 space-y-2">
+                        <p className="text-sm font-semibold text-silver-white/60">Return Request Resolved</p>
+                        <p className="text-sm text-silver-white/80">
+                          <span className="font-semibold text-silver-white">Status:</span>{' '}
+                          <span className={order.returnRequest.status === 'Approved' ? 'text-green-400 font-bold' : 'text-red-400 font-bold'}>
+                            {order.returnRequest.status}
+                          </span>
+                        </p>
+                        <p className="text-sm text-silver-white/80"><span className="font-semibold text-silver-white">Reason:</span> {order.returnRequest.reason}</p>
+                      </div>
+                    )}
 
                     {/* Status Update */}
                     <div className="grid grid-cols-2 gap-3">

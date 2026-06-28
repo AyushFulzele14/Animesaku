@@ -166,7 +166,7 @@ export function ProductDetailModal({ productId, onClose }: ProductDetailModalPro
                       <img
                         src={resolveAssetUrl(details.images?.[0]?.url)}
                         alt={details.title}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain"
                       />
                       {details.discountPrice && details.discountPrice > 0 && (
                         <span className="absolute top-4 right-4 bg-primary-red px-3 py-1 rounded-full text-white text-xs font-bold shadow-neon-red">

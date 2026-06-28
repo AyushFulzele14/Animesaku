@@ -154,12 +154,14 @@ export const deleteProduct = asyncHandler(async (req, res) => {
   }
 
   // Clean up assets in Cloudinary
-  for (const img of product.images) {
-    if (img.public_id) {
-      try {
-        await cloudinary.uploader.destroy(img.public_id);
-      } catch (e) {
-        logger.error(`Cloudinary deletion error for product: ${id}`);
+  if (product.images && Array.isArray(product.images)) {
+    for (const img of product.images) {
+      if (img.public_id) {
+        try {
+          await cloudinary.uploader.destroy(img.public_id);
+        } catch (e) {
+          logger.error(`Cloudinary deletion error for product: ${id}`);
+        }
       }
     }
   }

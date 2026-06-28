@@ -25,21 +25,8 @@ export function Hero() {
 
   return (
     <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
-      <div className="absolute inset-0 bg-gradient-to-b from-black via-matte-black to-black opacity-80" />
 
-      <div
-        className="absolute inset-0 opacity-30"
-        style={{
-          backgroundImage: `radial-gradient(circle at 50% 50%, rgba(238, 16, 16, 0.1) 0%, transparent 50%)`,
-        }}
-      />
 
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 1 }}
-        className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-primary-red/20 rounded-full blur-3xl opacity-40"
-      />
 
       <motion.div
         variants={container}

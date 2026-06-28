@@ -340,7 +340,7 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
     throw new ApiError(403, 'Only admins can update order status');
   }
 
-  if (!['Processing', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled'].includes(status)) {
+  if (!['Processing', 'Shipped', 'Delivered', 'Cancelled', 'Returned'].includes(status)) {
     throw new ApiError(400, 'Invalid order status');
   }
 
@@ -398,4 +398,50 @@ export const addTrackingNumber = asyncHandler(async (req, res) => {
   }
 
   return res.status(200).json(new ApiResponse(200, order, 'Tracking number added successfully'));
+});
+
+/**
+ * Admin: Approve/Reject Return & Refund Request
+ */
+export const handleReturnRequest = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { action } = req.body; // 'Approved' or 'Rejected'
+
+  if (req.user.role !== 'admin') {
+    throw new ApiError(403, 'Only admins can manage return requests');
+  }
+
+  if (!['Approved', 'Rejected'].includes(action)) {
+    throw new ApiError(400, 'Invalid return action. Must be Approved or Rejected');
+  }
+
+  const order = await Order.findById(id);
+  if (!order) {
+    throw new ApiError(404, 'Order not found');
+  }
+
+  if (order.returnRequest.status !== 'Requested') {
+    throw new ApiError(400, 'No active return request found for this order');
+  }
+
+  order.returnRequest.status = action;
+  order.returnRequest.actionedAt = new Date();
+
+  if (action === 'Approved') {
+    order.orderStatus = 'Returned';
+    // Restock the items back to inventory
+    for (const item of order.items) {
+      await Product.findByIdAndUpdate(item.product, {
+        $inc: { stockQuantity: item.quantity },
+      });
+    }
+  }
+
+  await order.save();
+
+  const updatedOrder = await Order.findById(id)
+    .populate('user', 'name email')
+    .populate('items.product', 'title price');
+
+  return res.status(200).json(new ApiResponse(200, updatedOrder, `Return request ${action.toLowerCase()} successfully`));
 });

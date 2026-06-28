@@ -18,6 +18,7 @@ export function AdminCategoryManager() {
 
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const canCreateCategory = useMemo(() => newCategoryName.trim().length > 1, [newCategoryName]);
   const canUpdateCategory = useMemo(
@@ -99,9 +100,6 @@ export function AdminCategoryManager() {
 
   const handleDeleteCategory = async (id: string) => {
     if (!isAdmin) return;
-    const ok = window.confirm("Delete this category?");
-    if (!ok) return;
-
     setLoading(true);
     setMessage(null);
     try {
@@ -138,93 +136,115 @@ export function AdminCategoryManager() {
         {message && <p className="text-silver-white/80 mb-4">{message}</p>}
 
         <div className="space-y-4">
-            <h3 className="text-xl font-bold text-silver-white">Categories</h3>
+          <h3 className="text-xl font-bold text-silver-white">Categories</h3>
 
-            <div className="flex gap-3">
-              <input
-                value={newCategoryName}
-                onChange={(e) => setNewCategoryName(e.target.value)}
-                placeholder="New category name"
-                className="input"
-              />
-              <button
-                type="button"
-                disabled={!canCreateCategory || loading || !isAdmin}
-                className="bg-primary-red text-white rounded-lg px-4 py-2 font-semibold disabled:opacity-60"
-                onClick={handleCreateCategory}
-              >
-                Add
-              </button>
-            </div>
-            {(loading || !user || !isAdmin || !canCreateCategory) && (
-              <p className="text-silver-white/60 text-sm">{createCategoryReason}</p>
-            )}
+          <div className="flex gap-3">
+            <input
+              value={newCategoryName}
+              onChange={(e) => setNewCategoryName(e.target.value)}
+              placeholder="New category name"
+              className="input"
+            />
+            <button
+              type="button"
+              disabled={!canCreateCategory || loading || !isAdmin}
+              className="bg-primary-red text-white rounded-lg px-4 py-2 font-semibold disabled:opacity-60"
+              onClick={handleCreateCategory}
+            >
+              Add
+            </button>
+          </div>
+          {(loading || !user || !isAdmin || !canCreateCategory) && (
+            <p className="text-silver-white/60 text-sm">{createCategoryReason}</p>
+          )}
 
-            <div className="space-y-3 max-h-56 overflow-y-auto pr-2">
-              {categories.map((c) => (
-                <div key={c._id} className="border border-primary-red/20 rounded-lg p-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-silver-white font-semibold">{c.name}</p>
-                    <div className="flex gap-2">
+          <div className="space-y-3 max-h-56 overflow-y-auto pr-2">
+            {categories.map((c) => (
+              <div key={c._id} className="border border-primary-red/20 rounded-lg p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-silver-white font-semibold">{c.name}</p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      className="text-primary-red hover:underline"
+                      onClick={() => {
+                        setEditCategoryId(c._id);
+                        setEditCategoryName(c.name);
+                      }}
+                    >
+                      Edit
+                    </button>
+                    {confirmDeleteId === c._id ? (
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          className="text-primary-red font-bold hover:underline"
+                          onClick={() => {
+                            void handleDeleteCategory(c._id);
+                            setConfirmDeleteId(null);
+                          }}
+                        >
+                          Confirm
+                        </button>
+                        <button
+                          type="button"
+                          className="text-silver-white/60 hover:underline"
+                          onClick={() => setConfirmDeleteId(null)}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
                       <button
                         type="button"
                         className="text-primary-red hover:underline"
-                        onClick={() => {
-                          setEditCategoryId(c._id);
-                          setEditCategoryName(c.name);
-                        }}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        className="text-primary-red hover:underline"
-                        onClick={() => handleDeleteCategory(c._id)}
+                        onClick={() => setConfirmDeleteId(c._id)}
                       >
                         Delete
                       </button>
-                    </div>
+                    )}
                   </div>
                 </div>
-              ))}
-              {categories.length === 0 && <p className="text-silver-white/60">No categories yet.</p>}
-            </div>
-
-            {editCategoryId && (
-              <div className="border border-primary-red/20 rounded-lg p-3 space-y-3">
-                <h4 className="font-semibold text-silver-white">Update category</h4>
-                <input
-                  value={editCategoryName}
-                  onChange={(e) => setEditCategoryName(e.target.value)}
-                  className="input"
-                  placeholder="Category name"
-                />
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    disabled={!canUpdateCategory || loading || !isAdmin}
-                    className="bg-primary-red text-white rounded-lg px-4 py-2 font-semibold disabled:opacity-60"
-                    onClick={handleUpdateCategory}
-                  >
-                    Save
-                  </button>
-                  <button
-                    type="button"
-                    disabled={loading}
-                    className="bg-black/50 text-silver-white border border-primary-red/30 rounded-lg px-4 py-2 font-semibold disabled:opacity-60"
-                    onClick={() => {
-                      setEditCategoryId("");
-                      setEditCategoryName("");
-                    }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-                {(loading || !user || !isAdmin || !canUpdateCategory) && (
-                  <p className="text-silver-white/60 text-sm">{updateCategoryReason}</p>
-                )}
               </div>
-            )}
+            ))}
+            {categories.length === 0 && <p className="text-silver-white/60">No categories yet.</p>}
+          </div>
+
+          {editCategoryId && (
+            <div className="border border-primary-red/20 rounded-lg p-3 space-y-3">
+              <h4 className="font-semibold text-silver-white">Update category</h4>
+              <input
+                value={editCategoryName}
+                onChange={(e) => setEditCategoryName(e.target.value)}
+                className="input"
+                placeholder="Category name"
+              />
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  disabled={!canUpdateCategory || loading || !isAdmin}
+                  className="bg-primary-red text-white rounded-lg px-4 py-2 font-semibold disabled:opacity-60"
+                  onClick={handleUpdateCategory}
+                >
+                  Save
+                </button>
+                <button
+                  type="button"
+                  disabled={loading}
+                  className="bg-black/50 text-silver-white border border-primary-red/30 rounded-lg px-4 py-2 font-semibold disabled:opacity-60"
+                  onClick={() => {
+                    setEditCategoryId("");
+                    setEditCategoryName("");
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+              {(loading || !user || !isAdmin || !canUpdateCategory) && (
+                <p className="text-silver-white/60 text-sm">{updateCategoryReason}</p>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </section>

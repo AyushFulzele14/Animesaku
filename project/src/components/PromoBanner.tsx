@@ -13,10 +13,7 @@ export function PromoBanner() {
           viewport={{ once: true }}
           className="relative bg-gradient-to-r from-primary-red/20 to-dark-red/20 rounded-2xl border border-primary-red/40 overflow-hidden h-96"
         >
-          <div className="absolute inset-0">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-primary-red/10 rounded-full blur-3xl" />
-            <div className="absolute bottom-0 left-0 w-96 h-96 bg-dark-red/10 rounded-full blur-3xl" />
-          </div>
+          <div className="absolute inset-0" />
 
           <div className="relative z-10 flex flex-col justify-center items-start h-full p-8 md:p-16">
             <motion.h2

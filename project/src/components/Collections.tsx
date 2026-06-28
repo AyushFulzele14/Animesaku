@@ -28,7 +28,6 @@ export function Collections({ onSelectCategory }: CollectionsProps) {
 
   return (
     <section id="collections" className="relative py-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary-red/5 to-transparent opacity-30 pointer-events-none" />
 
       <div className="max-w-7xl mx-auto relative z-10">
         <motion.div
@@ -63,22 +62,38 @@ export function Collections({ onSelectCategory }: CollectionsProps) {
                 }}
                 type="button"
                 onClick={() => handleSelect(collection.name)}
-                className="group relative"
+                className="group relative rounded-lg overflow-hidden"
               >
-                <div className="aspect-square bg-gradient-to-br from-primary-red/10 to-dark-red/10 rounded-lg border border-primary-red/30 hover:border-primary-red/60 transition-all duration-300 flex flex-col items-center justify-center p-6 cursor-pointer overflow-hidden">
-                  <div className="absolute inset-0 bg-primary-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="aspect-[4/3] md:aspect-[16/9] lg:aspect-[2/1] rounded-lg border border-primary-red/30 group-hover:border-primary-red/60 transition-all duration-300 flex flex-col items-center justify-center p-6 cursor-pointer overflow-hidden relative w-full h-full">
+                  {/* Background Image with Zoom Effect */}
+                  <div
+                    className="absolute inset-0 transition-transform duration-700 ease-out group-hover:scale-110 z-0"
+                    style={{
+                      backgroundImage: `url(${
+                        collection.name === 'Anime Posters'
+                          ? '/anime-posters.png'
+                          : '/anime-stickers.png'
+                      })`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                    }}
+                  />
+
+                  {/* Dark overlay for readability */}
+                  <div className="absolute inset-0 bg-black/60 group-hover:bg-black/40 transition-colors duration-300 z-10" />
+                  <div className="absolute inset-0 bg-primary-red/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10" />
 
                   <motion.div
                     whileHover={{ rotate: 12, scale: 1.1 }}
                     transition={{ type: 'spring', stiffness: 300 }}
-                    className="relative z-10 mb-3"
+                    className="relative z-20 mb-3"
                   >
                     {IconComponent && (
                       <IconComponent className="w-10 h-10 text-primary-red group-hover:text-light-pink transition-colors duration-300" />
                     )}
                   </motion.div>
 
-                  <h3 className="text-center text-sm md:text-base font-bold text-silver-white group-hover:text-primary-red transition-colors duration-300 relative z-10">
+                  <h3 className="text-center text-sm md:text-base font-black uppercase tracking-wider text-silver-white group-hover:text-primary-red transition-colors duration-300 relative z-20 text-shadow-glow">
                     {collection.name}
                   </h3>
 
@@ -86,7 +101,7 @@ export function Collections({ onSelectCategory }: CollectionsProps) {
                     initial={{ scaleX: 0 }}
                     whileHover={{ scaleX: 1 }}
                     transition={{ duration: 0.3 }}
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-primary-red to-transparent"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-primary-red to-transparent z-20"
                   />
                 </div>
               </motion.button>

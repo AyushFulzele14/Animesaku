@@ -95,26 +95,36 @@ export function CartDrawer() {
     });
   };
 
-  const verifyRazorpayPayment = async (payload: {
-    orderId: string;
-    razorpayOrderId: string;
-    razorpayPaymentId: string;
-    razorpaySignature: string;
-  }) => {
+  const verifyRazorpayPayment = async (
+    payload: {
+      orderId: string;
+      razorpayOrderId: string;
+      razorpayPaymentId: string;
+      razorpaySignature: string;
+    },
+    orderData?: ConfirmationProps['orderData']
+  ) => {
     await api.post('/orders/verify-payment', payload);
     clearCart();
     setCheckoutMessage('Payment verified and order confirmed successfully!');
-    setOrderConfirmed({ orderId: payload.orderId, data: payload });
+    setOrderConfirmed({
+      orderId: payload.orderId,
+      data: orderData || {
+        items: [],
+        totals: { grandTotal: 0 },
+        paymentInfo: { method: 'Razorpay' }
+      }
+    });
   };
 
-  const openRazorpayCheckout = async (payload: RazorpayPayload) => {
+  const openRazorpayCheckout = async (payload: RazorpayPayload, orderData: ConfirmationProps['orderData']) => {
     if (payload.isMock) {
       await verifyRazorpayPayment({
         orderId: payload.orderId,
         razorpayOrderId: payload.razorpayOrderId,
         razorpayPaymentId: 'mock_payment_id',
         razorpaySignature: 'mock_signature',
-      });
+      }, orderData);
       return;
     }
 
@@ -153,7 +163,7 @@ export function CartDrawer() {
             razorpayOrderId: razorpayResponse.razorpay_order_id,
             razorpayPaymentId: razorpayResponse.razorpay_payment_id,
             razorpaySignature: razorpayResponse.razorpay_signature,
-          });
+          }, orderData);
         } catch (error) {
           setCheckoutMessage(error instanceof Error ? error.message : 'Payment verification failed.');
         } finally {
@@ -231,7 +241,7 @@ export function CartDrawer() {
         };
         setPaymentPayload(payload);
         setCheckoutMessage('Razorpay transaction initialized — opening checkout.');
-        await openRazorpayCheckout(payload);
+        await openRazorpayCheckout(payload, response as ConfirmationProps['orderData']);
       }
     } catch (error) {
       setCheckoutMessage(error instanceof Error ? error.message : 'Failed to place order.');
@@ -290,7 +300,11 @@ export function CartDrawer() {
                 <img
                   src={item.product.image}
                   alt={item.product.title}
-                  className="h-24 w-24 rounded-3xl object-cover"
+                  className="h-24 w-24 rounded-3xl object-cover cursor-zoom-in hover:opacity-85 transition-opacity"
+                  onClick={() => {
+                    closeCart();
+                    window.dispatchEvent(new CustomEvent('open-image-lightbox', { detail: { imageUrl: item.product.image } }));
+                  }}
                 />
                 <div className="flex flex-col justify-between">
                   <div>

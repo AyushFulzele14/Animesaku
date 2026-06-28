@@ -42,7 +42,19 @@ exports.updateProduct = asyncHandler(async (req, res) => {
 exports.deleteProduct = asyncHandler(async (req, res) => {
   const data = await Product.findById(req.params.id);
   if (!data) throw new ApiError(404, "Product not found");
-  for (const image of data.images) await deleteImage(image.public_id);
+  
+  if (data.images && Array.isArray(data.images)) {
+    for (const image of data.images) {
+      if (image.public_id) {
+        try {
+          await deleteImage(image.public_id);
+        } catch (e) {
+          // Ignore cloudinary deletion error if keys are not set
+        }
+      }
+    }
+  }
+
   await data.deleteOne();
   res.json({ success: true, message: "Product deleted" });
 });

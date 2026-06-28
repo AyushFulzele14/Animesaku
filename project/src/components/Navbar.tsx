@@ -1,5 +1,5 @@
-import { FormEvent, useEffect, useState } from 'react';
-import { ShoppingCart, Heart, User, Menu, X, Package, Clipboard } from 'lucide-react';
+import { FormEvent, useEffect, useState, useRef } from 'react';
+import { ShoppingCart, Heart, User, Menu, X, Package } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Logo } from './Logo';
 import { LiveSearch } from './LiveSearch';
@@ -8,12 +8,10 @@ import { MusicToggle } from './MusicToggle';
 import { OrderHistory } from './OrderHistory';
 import { WishlistModal } from './WishlistModal';
 import { useAuth, useCart } from '../hooks';
+import { gsap } from 'gsap';
+import './Navbar.css';
 
-interface NavbarProps {
-  onAdminOrdersClick?: () => void;
-}
-
-export function Navbar({ onAdminOrdersClick }: NavbarProps) {
+export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [showOrderHistory, setShowOrderHistory] = useState(false);
@@ -26,12 +24,118 @@ export function Navbar({ onAdminOrdersClick }: NavbarProps) {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
 
+  const circleRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const tlRefs = useRef<gsap.core.Timeline[]>([]);
+  const activeTweenRefs = useRef<any[]>([]);
+
+  const [activeHash, setActiveHash] = useState(window.location.hash || '#home');
+
+  const navItems = [
+    { label: 'Home', href: '#home' },
+    { label: 'Shop', href: '#shop' },
+    { label: 'Collections', href: '#collections' },
+    ...(isAdmin ? [
+      { label: 'Products', href: '#admin' },
+      { label: 'Orders', href: '#admin-orders' }
+    ] : []),
+    { label: 'Contact', href: '#contact' }
+  ];
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      setActiveHash(window.location.hash || '#home');
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  useEffect(() => {
+    const layout = () => {
+      circleRefs.current.forEach((circle, index) => {
+        if (!circle?.parentElement) return;
+
+        const pill = circle.parentElement;
+        const rect = pill.getBoundingClientRect();
+        const { width: w, height: h } = rect;
+        const R = ((w * w) / 4 + h * h) / (2 * h);
+        const D = Math.ceil(2 * R) + 2;
+        const delta = Math.ceil(R - Math.sqrt(Math.max(0, R * R - (w * w) / 4))) + 1;
+        const originY = D - delta;
+
+        circle.style.width = `${D}px`;
+        circle.style.height = `${D}px`;
+        circle.style.bottom = `-${delta}px`;
+
+        gsap.set(circle, {
+          xPercent: -50,
+          scale: 0,
+          transformOrigin: `50% ${originY}px`
+        });
+
+        const label = pill.querySelector('.pill-label');
+        const white = pill.querySelector('.pill-label-hover');
+
+        if (label) gsap.set(label, { y: 0 });
+        if (white) gsap.set(white, { y: h + 12, opacity: 0 });
+
+        tlRefs.current[index]?.kill();
+        const tl = gsap.timeline({ paused: true });
+
+        tl.to(circle, { scale: 1.2, xPercent: -50, duration: 2, ease: 'power3.easeOut', overwrite: 'auto' }, 0);
+
+        if (label) {
+          tl.to(label, { y: -(h + 8), duration: 2, ease: 'power3.easeOut', overwrite: 'auto' }, 0);
+        }
+
+        if (white) {
+          gsap.set(white, { y: Math.ceil(h + 100), opacity: 0 });
+          tl.to(white, { y: 0, opacity: 1, duration: 2, ease: 'power3.easeOut', overwrite: 'auto' }, 0);
+        }
+
+        tlRefs.current[index] = tl;
+      });
+    };
+
+    const timer = setTimeout(layout, 150);
+
+    const onResize = () => layout();
+    window.addEventListener('resize', onResize);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', onResize);
+    };
+  }, [navItems]);
+
+  const handleEnter = (i: number) => {
+    const tl = tlRefs.current[i];
+    if (!tl) return;
+    activeTweenRefs.current[i]?.kill();
+    activeTweenRefs.current[i] = tl.tweenTo(tl.duration(), {
+      duration: 0.3,
+      ease: 'power3.easeOut',
+      overwrite: 'auto'
+    });
+  };
+
+  const handleLeave = (i: number) => {
+    const tl = tlRefs.current[i];
+    if (!tl) return;
+    activeTweenRefs.current[i]?.kill();
+    activeTweenRefs.current[i] = tl.tweenTo(0, {
+      duration: 0.2,
+      ease: 'power3.easeOut',
+      overwrite: 'auto'
+    });
+  };
+
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
 
   const [signupName, setSignupName] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
+  const [signupRole, setSignupRole] = useState<'customer' | 'admin'>('customer');
 
   useEffect(() => {
     const syncWishlistCount = () => {
@@ -59,6 +163,7 @@ export function Navbar({ onAdminOrdersClick }: NavbarProps) {
     setSignupName('');
     setSignupEmail('');
     setSignupPassword('');
+    setSignupRole('customer');
   };
 
   const [authSubmitting, setAuthSubmitting] = useState(false);
@@ -75,164 +180,225 @@ export function Navbar({ onAdminOrdersClick }: NavbarProps) {
 
   const handleSignup = async (event: FormEvent) => {
     event.preventDefault();
-    await signUp(signupName, signupEmail, signupPassword);
+    await signUp(signupName, signupEmail, signupPassword, signupRole);
   };
 
   return (
     <>
       {showOrderHistory && <OrderHistory onClose={() => setShowOrderHistory(false)} />}
       <motion.nav
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
+        initial={{ y: -120, x: '-50%' }}
+        animate={{ y: 0, x: '-50%' }}
         transition={{ duration: 0.5 }}
-        className="fixed top-0 w-full z-50 backdrop-blur-md bg-black/40 border-b border-primary-red/30"
+        className="fixed top-6 left-1/2 -translate-x-1/2 w-[92%] max-w-6xl z-50 backdrop-blur-md bg-black/60 border border-primary-red/25 rounded-[32px] px-6 py-2.5 shadow-[0_8px_32px_rgba(238,16,16,0.15)]"
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            <a href="#" className="flex items-center hover:opacity-80 transition-opacity duration-300">
+        <div className="w-full flex justify-between items-center h-14">
+          <a href="#home" className="flex items-center hover:opacity-80 transition-opacity duration-300">
             <Logo size="medium" showGlow={false} />
           </a>
 
-            <div className="hidden md:flex items-center gap-8">
-              <a href="#home" className="text-silver-white hover:text-primary-red transition-colors duration-300">
-                Home
-              </a>
-              <a href="#shop" className="text-silver-white hover:text-primary-red transition-colors duration-300">
-                Shop
-              </a>
-              <a href="#collections" className="text-silver-white hover:text-primary-red transition-colors duration-300">
-                Collections
-              </a>
-              {isAdmin && (
-                <a href="#admin" className="text-silver-white hover:text-primary-red transition-colors duration-300">
-                  Admin
-                </a>
-              )}
-              <a href="#newsletter" className="text-silver-white hover:text-primary-red transition-colors duration-300">
-                Contact
-              </a>
-            </div>
+          {/* PillNav items (Desktop) */}
+          <div className="hidden md:block">
+            <ul className="pill-list">
+              {navItems.map((item, i) => (
+                <li key={item.href}>
+                  <a
+                    href={item.href}
+                    className={`pill${activeHash === item.href ? ' is-active' : ''}`}
+                    onMouseEnter={() => handleEnter(i)}
+                    onMouseLeave={() => handleLeave(i)}
+                  >
+                    <span
+                      className="hover-circle"
+                      ref={(el) => {
+                        circleRefs.current[i] = el;
+                      }}
+                    />
+                    <span className="label-stack">
+                      <span className="pill-label">{item.label}</span>
+                      <span className="pill-label-hover">{item.label}</span>
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
 
-            <div className="hidden md:flex items-center gap-4">
+          {/* Desktop Right Actions */}
+          <div className="hidden md:flex items-center gap-3">
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              onClick={() => setSearchOpen(true)}
+              className="p-2 rounded-full hover:bg-primary-red/10 transition-colors duration-300"
+            >
+              <svg className="w-5 h-5 text-silver-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </motion.button>
+
+            <MusicToggle />
+            <ThemeToggle />
+
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              onClick={() => setWishlistOpen(true)}
+              className="relative p-2 rounded-full hover:bg-primary-red/10 transition-colors duration-300"
+              title="Wishlist"
+            >
+              <Heart className="w-5 h-5 text-silver-white" />
+              {wishlistCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-primary-red text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                  {wishlistCount}
+                </span>
+              )}
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              className="relative p-2 rounded-full hover:bg-primary-red/10 transition-colors duration-300"
+              onClick={toggleCart}
+            >
+              <ShoppingCart className="w-5 h-5 text-silver-white" />
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-primary-red text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                  {cartCount}
+                </span>
+              )}
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              className="p-2 rounded-full hover:bg-primary-red/10 transition-colors duration-300"
+              onClick={() => (user ? setAuthModalOpen(true) : openAuthModal('login'))}
+            >
+              <User className="w-5 h-5 text-silver-white" />
+            </motion.button>
+
+            {user && (
+              <>
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  onClick={() => setShowOrderHistory(true)}
+                  className="p-2 rounded-full hover:bg-primary-red/10 transition-colors duration-300"
+                  title="Order History"
+                >
+                  <Package className="w-5 h-5 text-silver-white" />
+                </motion.button>
+                <button
+                  onClick={() => signOut()}
+                  className="ml-1 px-3 py-1.5 rounded-full bg-primary-red text-black font-extrabold text-xs tracking-wider hover:opacity-95 transition-opacity"
+                >
+                  LOGOUT
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* Mobile hamburger */}
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="md:hidden p-2 rounded-full hover:bg-primary-red/10 transition-colors"
+          >
+            {isOpen ? (
+              <X className="w-6 h-6 text-primary-red" />
+            ) : (
+              <Menu className="w-6 h-6 text-silver-white" />
+            )}
+          </button>
+        </div>
+
+        {/* Mobile menu expanded container */}
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="md:hidden mt-3 pt-3 border-t border-primary-red/10 flex flex-col gap-3"
+          >
+            {navItems.map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                onClick={() => setIsOpen(false)}
+                className={`px-4 py-2 rounded-2xl text-xs font-extrabold uppercase tracking-wider transition-colors ${
+                  activeHash === item.href
+                    ? 'bg-primary-red/10 text-primary-red'
+                    : 'text-silver-white hover:text-primary-red'
+                }`}
+              >
+                {item.label}
+              </a>
+            ))}
+
+            <div className="flex items-center justify-around border-t border-primary-red/10 pt-3 mt-1">
               <motion.button
                 whileHover={{ scale: 1.1 }}
-                onClick={() => setSearchOpen(true)}
-                className="p-2 rounded-lg hover:bg-primary-red/20 transition-colors duration-300"
+                onClick={() => { setSearchOpen(true); setIsOpen(false); }}
+                className="p-2 rounded-full hover:bg-primary-red/10"
               >
                 <svg className="w-5 h-5 text-silver-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </motion.button>
-
               <MusicToggle />
               <ThemeToggle />
-
               <motion.button
                 whileHover={{ scale: 1.1 }}
-                onClick={() => setWishlistOpen(true)}
-                className="relative p-2 rounded-lg hover:bg-primary-red/20 transition-colors duration-300"
-                title="Wishlist"
+                onClick={() => { setWishlistOpen(true); setIsOpen(false); }}
+                className="relative p-2 rounded-full hover:bg-primary-red/10"
               >
-                <Heart className="w-6 h-6 text-silver-white" />
+                <Heart className="w-5 h-5 text-silver-white" />
                 {wishlistCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-primary-red text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 bg-primary-red text-white text-[9px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
                     {wishlistCount}
                   </span>
                 )}
               </motion.button>
-
               <motion.button
                 whileHover={{ scale: 1.1 }}
-                className="relative p-2 rounded-lg hover:bg-primary-red/20 transition-colors duration-300"
-                onClick={toggleCart}
+                onClick={() => { toggleCart(); setIsOpen(false); }}
+                className="relative p-2 rounded-full hover:bg-primary-red/10"
               >
-                <ShoppingCart className="w-6 h-6 text-silver-white" />
+                <ShoppingCart className="w-5 h-5 text-silver-white" />
                 {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-primary-red text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 bg-primary-red text-white text-[9px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
                     {cartCount}
                   </span>
                 )}
               </motion.button>
-
               <motion.button
                 whileHover={{ scale: 1.1 }}
-                className="p-2 rounded-lg hover:bg-primary-red/20 transition-colors duration-300"
-                onClick={() => (user ? setAuthModalOpen(true) : openAuthModal('login'))}
+                onClick={() => {
+                  setIsOpen(false);
+                  user ? setAuthModalOpen(true) : openAuthModal('login');
+                }}
+                className="p-2 rounded-full hover:bg-primary-red/10"
               >
-                <User className="w-6 h-6 text-silver-white" />
+                <User className="w-5 h-5 text-silver-white" />
               </motion.button>
-
               {user && (
                 <>
-                  {isAdmin && (
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      onClick={onAdminOrdersClick}
-                      className="p-2 rounded-lg hover:bg-primary-red/20 transition-colors duration-300"
-                      title="Admin Orders"
-                    >
-                      <Clipboard className="w-6 h-6 text-primary-red" />
-                    </motion.button>
-                  )}
                   <motion.button
                     whileHover={{ scale: 1.1 }}
-                    onClick={() => setShowOrderHistory(true)}
-                    className="p-2 rounded-lg hover:bg-primary-red/20 transition-colors duration-300"
-                    title="Order History"
+                    onClick={() => { setShowOrderHistory(true); setIsOpen(false); }}
+                    className="p-2 rounded-full hover:bg-primary-red/10"
                   >
-                    <Package className="w-6 h-6 text-silver-white" />
+                    <Package className="w-5 h-5 text-silver-white" />
                   </motion.button>
                   <button
-                    onClick={() => signOut()}
-                    className="ml-2 px-3 py-2 rounded-lg bg-transparent text-silver-white hover:bg-primary-red/10"
+                    onClick={() => { signOut(); setIsOpen(false); }}
+                    className="text-primary-red text-xs font-black tracking-wider"
                   >
-                    Logout
+                    LOGOUT
                   </button>
                 </>
               )}
             </div>
-
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="md:hidden p-2 rounded-lg hover:bg-primary-red/20"
-            >
-              {isOpen ? (
-                <X className="w-6 h-6 text-primary-red" />
-              ) : (
-                <Menu className="w-6 h-6 text-silver-white" />
-              )}
-            </button>
-          </div>
-
-          {isOpen && (
-            <motion.div
-              initial={{ height: 0 }}
-              animate={{ height: 'auto' }}
-              exit={{ height: 0 }}
-              className="md:hidden pb-6 border-t border-primary-red/30"
-            >
-              <div className="flex flex-col gap-4 mt-4">
-                <a href="#home" className="text-silver-white hover:text-primary-red">Home</a>
-                <a href="#shop" className="text-silver-white hover:text-primary-red">Shop</a>
-                <a href="#collections" className="text-silver-white hover:text-primary-red">Collections</a>
-                {isAdmin && <a href="#admin" className="text-silver-white hover:text-primary-red">Admin</a>}
-                <a href="#newsletter" className="text-silver-white hover:text-primary-red">Contact</a>
-                {user ? (
-                  <button onClick={() => signOut()} className="text-primary-red text-left">Logout</button>
-                ) : (
-                  <input
-                    type="text"
-                    placeholder="Search..."
-                    className="bg-matte-black/50 text-silver-white placeholder-silver-white/50 px-4 py-2 rounded border border-primary-red/30"
-                  />
-                )}
-              </div>
-            </motion.div>
-          )}
-        </div>
+          </motion.div>
+        )}
       </motion.nav>
       <LiveSearch isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
-      <div className="h-20" />
+      <div className="h-28" />
 
       {authModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center px-4">
@@ -258,26 +424,56 @@ export function Navbar({ onAdminOrdersClick }: NavbarProps) {
 
             <div className="p-4">
               {user ? (
-                <>
-                  <p className="text-silver-white/80 mb-3">
-                    Signed in as <span className="font-semibold">{user.email}</span> ({user.role})
-                  </p>
+                <div className="space-y-5 text-left">
+                  {/* Profile Header */}
+                  <div className="flex items-center gap-4 bg-black/45 border border-primary-red/10 rounded-2xl p-4">
+                    <div className="w-14 h-14 bg-primary-red/10 border border-primary-red/25 rounded-full flex items-center justify-center text-primary-red font-black text-2xl uppercase shadow-inner">
+                      {user.name ? user.name[0] : user.email[0]}
+                    </div>
+                    <div>
+                      <h4 className="text-base font-extrabold text-silver-white uppercase tracking-wider">
+                        {user.name || 'Store Member'}
+                      </h4>
+                      <span className={`text-[9px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-full inline-block border mt-1.5 ${
+                        user.role === 'admin' 
+                          ? 'bg-primary-red/10 border-primary-red/35 text-primary-red shadow-[0_0_10px_rgba(238,16,16,0.15)]'
+                          : 'bg-silver-white/5 border-silver-white/20 text-silver-white/70'
+                      }`}>
+                        {user.role === 'admin' ? 'Store Admin' : 'Customer Account'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Metadata Fields */}
+                  <div className="space-y-2.5 bg-black/25 border border-white/5 rounded-2xl p-4 text-xs">
+                    <div className="flex justify-between items-center py-1 border-b border-white/5">
+                      <span className="text-silver-white/40 uppercase tracking-wider font-semibold">Email Address</span>
+                      <span className="font-bold text-silver-white">{user.email}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-1 border-b border-white/5">
+                      <span className="text-silver-white/40 uppercase tracking-wider font-semibold">Account ID</span>
+                      <span className="font-mono text-silver-white/60 select-all">{user.id}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-1">
+                      <span className="text-silver-white/40 uppercase tracking-wider font-semibold">Access Level</span>
+                      <span className="font-extrabold text-primary-red uppercase tracking-wider">
+                        {user.role === 'admin' ? 'Full Authority' : 'Standard Member'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Action Button */}
                   <button
                     type="button"
                     onClick={() => {
                       signOut();
                       setAuthModalOpen(false);
                     }}
-                    className="w-full bg-primary-red text-white rounded-lg px-4 py-2 font-semibold"
+                    className="w-full flex items-center justify-center gap-2 bg-primary-red text-black font-extrabold py-3.5 rounded-xl hover:opacity-90 transition-opacity shadow-[0_0_15px_rgba(238,16,16,0.2)]"
                   >
-                    Logout
+                    Logout Session
                   </button>
-                  {!isAdmin && (
-                    <p className="text-silver-white/60 text-sm mt-3">
-                      You are not an admin account.
-                    </p>
-                  )}
-                </>
+                </div>
               ) : (
                 <>
                   <div className="flex gap-2 mb-4">
@@ -347,10 +543,34 @@ export function Navbar({ onAdminOrdersClick }: NavbarProps) {
                         placeholder="Password"
                         className="input"
                       />
-                      <p className="text-silver-white/60 text-sm">
-                        New accounts are created as customers.
-                      </p>
-                      <button type="submit" className="w-full bg-primary-red text-white rounded-lg px-4 py-2 font-semibold">
+                      <div className="flex flex-col gap-2 my-3">
+                        <label className="text-xs uppercase tracking-wider text-silver-white/60 font-semibold">Account Role</label>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setSignupRole('customer')}
+                            className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold border transition-all ${
+                              signupRole === 'customer'
+                                ? 'bg-primary-red text-black border-primary-red'
+                                : 'bg-black/40 border-primary-red/20 text-silver-white/60 hover:border-primary-red/55'
+                            }`}
+                          >
+                            Customer
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setSignupRole('admin')}
+                            className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold border transition-all ${
+                              signupRole === 'admin'
+                                ? 'bg-primary-red text-black border-primary-red'
+                                : 'bg-black/40 border-primary-red/20 text-silver-white/60 hover:border-primary-red/55'
+                            }`}
+                          >
+                            Admin
+                          </button>
+                        </div>
+                      </div>
+                      <button type="submit" className="w-full bg-primary-red text-black rounded-lg px-4 py-2 font-semibold hover:opacity-95 transition-opacity">
                         Create account
                       </button>
                     </form>

@@ -9,6 +9,7 @@ import {
   getAllOrders,
   updateOrderStatus,
   addTrackingNumber,
+  handleReturnRequest,
 } from '../controllers/orderController.js';
 import { protect } from '../middlewares/authMiddleware.js';
 import { validate } from '../middlewares/validationMiddleware.js';
@@ -31,5 +32,6 @@ router.post('/:id/return', requestReturn);
 router.get('/admin/all-orders', getAllOrders);
 router.patch('/admin/:id/update-status', updateOrderStatus);
 router.patch('/admin/:id/add-tracking', addTrackingNumber);
+router.patch('/admin/:id/handle-return', handleReturnRequest);
 
 export default router;

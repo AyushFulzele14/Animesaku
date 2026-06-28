@@ -234,105 +234,152 @@ export function ContactPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-16">
+    <div className="max-w-5xl mx-auto px-4 py-16 relative">
+      {/* Ambient background glows */}
+      <div className="absolute top-10 left-10 w-96 h-96 bg-primary-red/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-10 right-10 w-96 h-96 bg-light-pink/5 rounded-full blur-[120px] pointer-events-none" />
+
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center mb-12"
+        transition={{ duration: 0.6 }}
+        className="text-center mb-16"
       >
-        <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary-red to-light-pink mb-4">
-          Contact Support
+        <span className="text-xs font-bold tracking-widest text-primary-red uppercase bg-primary-red/10 border border-primary-red/20 px-3 py-1.5 rounded-full inline-block mb-4">
+          Support Grid
+        </span>
+        <h1 className="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary-red via-light-pink to-white tracking-tight mb-4">
+          CONTACT SUPPORT
         </h1>
-        <p className="text-silver-white/60">Have any custom order inquiries or order support requests? Send us a message.</p>
+        <p className="text-silver-white/60 max-w-xl mx-auto text-sm md:text-base">
+          Have bulk order inquiries, collaboration requests, or questions about your shipment? Send us a ticket.
+        </p>
       </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-matte-black/60 border border-primary-red/20 rounded-3xl p-6 lg:p-8">
-        {/* Contact info */}
-        <div className="space-y-6">
-          <h2 className="text-2xl font-bold text-silver-white">Get in Touch</h2>
-          <p className="text-silver-white/70 leading-relaxed text-sm">
-            Feel free to contact us about bulk orders, custom printing sizes, collaborations, or tracking inquiries.
-          </p>
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 bg-matte-black/40 border border-primary-red/10 backdrop-blur-md rounded-[32px] p-6 sm:p-10 lg:p-12 shadow-2xl relative overflow-hidden">
+        
+        {/* Contact Info (2/5 columns) */}
+        <div className="lg:col-span-2 space-y-8 flex flex-col justify-between">
+          <div className="space-y-6">
+            <h2 className="text-3xl font-bold text-silver-white tracking-tight">Get in Touch</h2>
+            <p className="text-silver-white/70 leading-relaxed text-sm">
+              We design and print everything locally. Drop us a line, and our support agents will respond to your transmission within 24 hours.
+            </p>
+          </div>
 
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 text-silver-white/80">
-              <Mail className="w-5 h-5 text-primary-red" />
-              <div>
-                <p className="text-xs text-silver-white/40">Email Us</p>
-                <a href="mailto:support@animysaku.store" className="text-sm font-semibold hover:underline">
-                  support@animysaku.store
-                </a>
+          <div className="space-y-4 my-6 lg:my-0">
+            {/* Mail Card */}
+            <motion.a 
+              href="mailto:support@animysaku.store"
+              whileHover={{ x: 6, borderColor: 'rgba(238, 16, 16, 0.4)' }}
+              className="flex items-center gap-4 bg-black/60 border border-primary-red/10 rounded-2xl p-4 transition-all duration-300"
+            >
+              <div className="w-12 h-12 bg-primary-red/10 border border-primary-red/20 rounded-xl flex items-center justify-center">
+                <Mail className="w-6 h-6 text-primary-red" />
               </div>
-            </div>
+              <div>
+                <p className="text-xs text-silver-white/40 font-semibold uppercase tracking-wider">Email Support</p>
+                <p className="text-sm font-bold text-silver-white hover:text-primary-red transition-colors">
+                  support@animysaku.store
+                </p>
+              </div>
+            </motion.a>
             
-            <div className="flex items-center gap-3 text-silver-white/80">
-              <div className="w-5 h-5 border border-primary-red rounded-full flex items-center justify-center text-[10px] text-primary-red font-bold">
+            {/* Instagram Card */}
+            <motion.a 
+              href="https://www.instagram.com/animysaku.store?igsh=MTRpaHA0Mnk4dmY4cQ=="
+              target="_blank"
+              rel="noreferrer"
+              whileHover={{ x: 6, borderColor: 'rgba(238, 16, 16, 0.4)' }}
+              className="flex items-center gap-4 bg-black/60 border border-primary-red/10 rounded-2xl p-4 transition-all duration-300"
+            >
+              <div className="w-12 h-12 bg-primary-red/10 border border-primary-red/20 rounded-xl flex items-center justify-center text-sm text-primary-red font-black">
                 IG
               </div>
               <div>
-                <p className="text-xs text-silver-white/40">Instagram DM</p>
-                <a
-                  href="https://www.instagram.com/animysaku.store?igsh=MTRpaHA0Mnk4dmY4cQ=="
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-sm font-semibold hover:underline"
-                >
+                <p className="text-xs text-silver-white/40 font-semibold uppercase tracking-wider">Instagram Channel</p>
+                <p className="text-sm font-bold text-silver-white hover:text-primary-red transition-colors">
                   @animysaku.store
-                </a>
+                </p>
               </div>
-            </div>
+            </motion.a>
+          </div>
+
+          <div className="text-xs text-silver-white/30 font-semibold tracking-wider uppercase">
+            © AnimySaku Store Corp.
           </div>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="text"
-            required
-            placeholder="Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="input focus:border-primary-red transition-all"
-          />
-          <input
-            type="email"
-            required
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="input focus:border-primary-red transition-all"
-          />
-          <input
-            type="text"
-            required
-            placeholder="Subject"
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            className="input focus:border-primary-red transition-all"
-          />
-          <textarea
-            required
-            rows={4}
-            placeholder="Message details..."
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            className="input focus:border-primary-red transition-all resize-none"
-          />
+        {/* Contact Form (3/5 columns) */}
+        <form onSubmit={handleSubmit} className="lg:col-span-3 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold uppercase tracking-wider text-silver-white/60">Your Name</label>
+              <input
+                type="text"
+                required
+                placeholder="Otaku"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full bg-black/65 border border-primary-red/20 rounded-xl px-4 py-3 text-sm text-silver-white placeholder-silver-white/20 focus:outline-none focus:border-primary-red transition-all"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold uppercase tracking-wider text-silver-white/60">Email Address</label>
+              <input
+                type="email"
+                required
+                placeholder="otaku@grid.net"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full bg-black/65 border border-primary-red/20 rounded-xl px-4 py-3 text-sm text-silver-white placeholder-silver-white/20 focus:outline-none focus:border-primary-red transition-all"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold uppercase tracking-wider text-silver-white/60">Message Subject</label>
+            <input
+              type="text"
+              required
+              placeholder="e.g. Custom Size Request"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              className="w-full bg-black/65 border border-primary-red/20 rounded-xl px-4 py-3 text-sm text-silver-white placeholder-silver-white/20 focus:outline-none focus:border-primary-red transition-all"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold uppercase tracking-wider text-silver-white/60">Transmission Details</label>
+            <textarea
+              required
+              rows={4}
+              placeholder="Type details of your request here..."
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              className="w-full bg-black/65 border border-primary-red/20 rounded-xl px-4 py-3 text-sm text-silver-white placeholder-silver-white/20 focus:outline-none focus:border-primary-red transition-all resize-none"
+            />
+          </div>
 
           {status && (
-            <div className="text-xs text-silver-white bg-green-500/10 border border-green-500/30 p-3 rounded-xl">
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-xs text-silver-white bg-green-500/10 border border-green-500/30 p-4 rounded-xl font-medium"
+            >
               {status}
-            </div>
+            </motion.div>
           )}
 
-          <button
+          <motion.button
+            whileTap={{ scale: 0.98 }}
             type="submit"
             disabled={sending}
-            className="w-full flex items-center justify-center gap-2 bg-primary-red text-black font-bold py-3 rounded-xl hover:bg-red-600 disabled:opacity-50 transition-colors"
+            className="w-full flex items-center justify-center gap-2 bg-primary-red text-black font-extrabold py-3.5 rounded-xl hover:opacity-90 disabled:opacity-50 transition-all shadow-[0_0_15px_rgba(238,16,16,0.2)] hover:shadow-[0_0_20px_rgba(238,16,16,0.35)]"
           >
             <Send className="w-4 h-4" />
-            {sending ? 'Sending...' : 'Send Message'}
-          </button>
+            {sending ? 'Transmitting...' : 'Send Transmission'}
+          </motion.button>
         </form>
       </div>
     </div>

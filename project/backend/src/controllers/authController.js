@@ -24,7 +24,7 @@ const formatUser = (user) => ({
  * Register User
  */
 export const registerUser = asyncHandler(async (req, res) => {
-  const { name, password } = req.body;
+  const { name, password, role } = req.body;
   const email = String(req.body.email || '').trim().toLowerCase();
 
   // Check if user exists
@@ -34,7 +34,7 @@ export const registerUser = asyncHandler(async (req, res) => {
   }
 
   // Create User
-  const user = await User.create({ name, email, password });
+  const user = await User.create({ name, email, password, role: role || 'customer' });
 
   // Automatically initialize a blank Shopping Cart for the user
   await Cart.create({ user: user._id, items: [] });

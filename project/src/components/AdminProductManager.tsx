@@ -31,6 +31,8 @@ export function AdminProductManager() {
   const { products, reloadProducts } = useProducts();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [deleting, setDeleting] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [confirmBulk, setConfirmBulk] = useState(false);
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -168,8 +170,8 @@ export function AdminProductManager() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Delete this product? This action cannot be undone.")) return;
     setDeleting(true);
+    setMessage(null);
     try {
       await api.delete(`/products/${id}`);
       setMessage("Product deleted.");
@@ -184,13 +186,10 @@ export function AdminProductManager() {
 
   const handleBulkDelete = useCallback(async () => {
     if (selectedIds.length === 0) return;
-    if (!window.confirm(`Delete ${selectedIds.length} selected product(s)?`)) return;
     setDeleting(true);
+    setMessage(null);
     try {
       for (const id of selectedIds) {
-        // await sequentially to avoid overloading the API
-        // frontend uses auth token so requests are authorized
-        // ignore individual failures to attempt all deletes
         try {
           await api.delete(`/products/${id}`);
         } catch {
@@ -210,16 +209,16 @@ export function AdminProductManager() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!isAdmin) return;
-      // Delete key deletes selected items
+      // Delete key triggers confirm bulk state
       if (e.key === "Delete") {
         if (selectedIds.length > 0) {
-          void handleBulkDelete();
+          setConfirmBulk(true);
         }
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [isAdmin, handleBulkDelete, selectedIds.length]);
+  }, [isAdmin, selectedIds.length]);
 
   return (
     <section className="py-20 px-4 sm:px-6 lg:px-8" id="admin-products">
@@ -314,7 +313,8 @@ export function AdminProductManager() {
         {user && isAdmin && (
           <div className="mt-6">
             <h3 className="text-2xl font-semibold text-silver-white mb-2">Manage Products</h3>
-            <p className="text-silver-white/70 mb-3 text-sm">Select products and press <span className="font-medium">Delete</span> to remove them quickly.</p>
+            <p className="text-silver-white/70 mb-3 text-sm">Select products and click <span className="font-medium">Delete</span> to remove them.</p>
+            {message && <p className="text-silver-white/80 mb-3 text-sm bg-matte-black/40 p-2 rounded border border-primary-red/10">{message}</p>}
 
             <div className="grid grid-cols-1 gap-3">
               {products.length === 0 ? (
@@ -328,19 +328,79 @@ export function AdminProductManager() {
                       <div className="text-silver-white font-medium">{p.title}</div>
                       <div className="text-silver-white/60 text-sm">{p.animeName} — {p.category}</div>
                     </div>
-                    <button onClick={() => handleDelete(p.id)} disabled={deleting} className="text-primary-red hover:underline ml-2">
-                      Delete
-                    </button>
+                    {confirmDeleteId === p.id ? (
+                      <div className="flex items-center gap-2 ml-2">
+                        <button
+                          onClick={() => {
+                            void handleDelete(p.id);
+                            setConfirmDeleteId(null);
+                          }}
+                          disabled={deleting}
+                          className="text-primary-red font-bold hover:underline"
+                        >
+                          Confirm
+                        </button>
+                        <button
+                          onClick={() => setConfirmDeleteId(null)}
+                          disabled={deleting}
+                          className="text-silver-white/60 hover:underline"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmDeleteId(p.id)}
+                        disabled={deleting}
+                        className="text-primary-red hover:underline ml-2"
+                      >
+                        Delete
+                      </button>
+                    )}
                   </div>
                 ))
               )}
             </div>
 
             <div className="mt-3 flex items-center gap-3">
-              <button onClick={handleBulkDelete} disabled={deleting || selectedIds.length === 0} className="bg-primary-red text-white rounded px-3 py-2 disabled:opacity-60">
-                {deleting ? "Deleting..." : `Delete Selected (${selectedIds.length})`}
-              </button>
-              <button onClick={() => { setSelectedIds([]); reloadProducts(); }} className="text-silver-white/70 hover:underline">
+              {confirmBulk ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      void handleBulkDelete();
+                      setConfirmBulk(false);
+                    }}
+                    disabled={deleting}
+                    className="bg-primary-red text-white rounded px-3 py-2 font-semibold"
+                  >
+                    Confirm Delete Selected ({selectedIds.length})
+                  </button>
+                  <button
+                    onClick={() => setConfirmBulk(false)}
+                    disabled={deleting}
+                    className="bg-matte-black/50 text-silver-white border border-primary-red/30 rounded px-3 py-2"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setConfirmBulk(true)}
+                  disabled={deleting || selectedIds.length === 0}
+                  className="bg-primary-red text-white rounded px-3 py-2 disabled:opacity-60 font-semibold"
+                >
+                  {deleting ? "Deleting..." : `Delete Selected (${selectedIds.length})`}
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  setSelectedIds([]);
+                  setConfirmBulk(false);
+                  setConfirmDeleteId(null);
+                  reloadProducts();
+                }}
+                className="text-silver-white/70 hover:underline"
+              >
                 Refresh
               </button>
             </div>

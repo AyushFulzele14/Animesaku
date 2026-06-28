@@ -9,13 +9,14 @@ export { Footer } from './Footer';
 export { ProductCard } from './ProductCard';
 export { SakuraParticles } from './SakuraParticles';
 export { Logo } from './Logo';
-export { AnimeCursor } from './AnimeCursor';
+export { TargetCursor } from './TargetCursor';
 export { LoadingAnimation } from './LoadingAnimation';
+export { ImageLightbox } from './ImageLightbox';
+export { GlareHover } from './GlareHover';
 export { LiveSearch } from './LiveSearch';
 export { ThemeToggle } from './ThemeToggle';
 export { MusicToggle } from './MusicToggle';
 export { WishlistButton } from './WishlistButton';
-export { AIRecommendations } from './AIRecommendations';
 export { AdminProductManager } from './AdminProductManager';
 export { AdminCategoryManager } from './AdminCategoryManager';
 export { CartDrawer } from './CartDrawer';
@@ -33,4 +34,7 @@ export {
   ContactPage,
   NotFoundPage
 } from './StaticPages';
+
+export { Particles } from './Particles';
+export { Galaxy } from './Galaxy';
 
