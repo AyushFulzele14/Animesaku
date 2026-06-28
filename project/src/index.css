@@ -1,0 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: #000;
+  font-family: 'Montserrat', sans-serif;
+  color: #c9c9c9;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a18;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ee1010;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #DD0E2E;
+}
+
+@layer components {
+  .text-shadow-glow {
+    text-shadow: 0 0 20px rgba(238, 16, 16, 0.5);
+  }
+
+  .input {
+    @apply bg-black/60 border border-primary-red/30 rounded-lg px-3 py-2 text-silver-white w-full;
+  }
+}
+
+@keyframes sakura-fall {
+  0% {
+    transform: translateY(-100px) translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) translateX(100px);
+    opacity: 0;
+  }
+}
+
+@keyframes neon-flicker {
+  0% {
+    box-shadow: 0 0 20px rgba(238, 16, 16, 0.6), 0 0 40px rgba(238, 16, 16, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(238, 16, 16, 0.8), 0 0 50px rgba(238, 16, 16, 0.4);
+  }
+  100% {
+    box-shadow: 0 0 20px rgba(238, 16, 16, 0.6), 0 0 40px rgba(238, 16, 16, 0.3);
+  }
+}
