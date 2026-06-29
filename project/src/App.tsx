@@ -11,7 +11,6 @@ import {
   Testimonials,
   Newsletter,
   Footer,
-  TargetCursor,
   AdminProductManager,
   AdminCategoryManager,
   CartDrawer,
@@ -194,14 +193,6 @@ function AppContent() {
 
   return (
     <div className="bg-black text-silver-white font-montserrat overflow-x-hidden flex flex-col min-h-screen">
-      <TargetCursor 
-        targetSelector="a, button, [role='button'], .cursor-target"
-        spinDuration={2}
-        hideDefaultCursor={true}
-        parallaxOn={true}
-        cursorColor="#ee1010"
-        cursorColorOnTarget="#ffffff"
-      />
       
       {/* Dynamic WebGL Galaxy Background */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-60">

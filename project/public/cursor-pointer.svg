@@ -1,0 +1,7 @@
+<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Target ring around the hotspot (X=6, Y=5) -->
+  <circle cx="6" cy="5" r="4.5" stroke="#ee1010" stroke-width="1" stroke-dasharray="2 1.5"/>
+  <circle cx="6" cy="5" r="1.5" fill="#ffffff"/>
+  <!-- The pointer arrow shifted to start at (6, 5) -->
+  <path d="M6 5V19L10 15L13.5 21.5L15.5 20.5L12.25 14.25L17.5 14L6 5Z" fill="#1a1a18" stroke="#ee1010" stroke-width="1.5" stroke-linejoin="round"/>
+</svg>

@@ -9,7 +9,6 @@ export { Footer } from './Footer';
 export { ProductCard } from './ProductCard';
 export { SakuraParticles } from './SakuraParticles';
 export { Logo } from './Logo';
-export { TargetCursor } from './TargetCursor';
 export { LoadingAnimation } from './LoadingAnimation';
 export { ImageLightbox } from './ImageLightbox';
 export { GlareHover } from './GlareHover';

@@ -20,7 +20,7 @@ export function Footer() {
           <div>
             <Logo size="large" showGlow={false} className="mb-4" />
             <p className="text-silver-white/70">
-              Premium anime posters and stickers with Japanese cyberpunk aesthetics
+              Premium anime posters and stickers
             </p>
           </div>
 
