@@ -112,7 +112,7 @@ export function Footer() {
           <div className="flex gap-6">
             <motion.a
               whileHover={{ scale: 1.2, color: '#ee1010' }}
-              href="https://www.instagram.com/animysaku.store?igsh=MTRpaHA0Mnk4dmY4cQ=="
+              href="https://www.instagram.com/animysaku.store?igsh=ZHFldmZtMDczbGdm"
               target="_blank"
               rel="noreferrer"
               className="text-silver-white/70 transition-colors duration-300"
