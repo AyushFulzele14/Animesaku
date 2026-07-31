@@ -81,8 +81,15 @@ export function resolveAssetUrl(url: string | undefined): string {
     return "https://images.pexels.com/photos/3587620/pexels-photo-3587620.jpeg?w=400&h=400&fit=crop";
   }
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
-  if (url.startsWith("/")) return url;
-  return `/${url}`;
+  
+  const cleanPath = url.startsWith("/") ? url.substring(1) : url;
+
+  if (API_BASE_URL.startsWith("http://") || API_BASE_URL.startsWith("https://")) {
+    const backendHost = API_BASE_URL.replace(/\/api$/, "");
+    return `${backendHost}/${cleanPath}`;
+  }
+  
+  return `/${cleanPath}`;
 }
 
 async function request<T>(endpoint: string, init?: RequestInit, retried = false): Promise<T> {
