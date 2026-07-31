@@ -84,3 +84,59 @@ export const sendOtpEmail = async (email, name, otpCode) => {
 
   return await sendEmail({ to: email, subject, html, text });
 };
+
+/**
+ * Send Welcome Email on Sign Up
+ */
+export const sendWelcomeEmail = async (email, name) => {
+  const subject = 'Welcome to AnimySaku Store! 🌟';
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ee1010; border-radius: 10px; background-color: #1a1a18; color: #c9c9c9;">
+      <h2 style="color: #ee1010; border-bottom: 2px solid #ee1010; padding-bottom: 10px; text-transform: uppercase; letter-spacing: 2px; text-align: center;">Welcome to AnimySaku Store</h2>
+      <p>Hi ${name || 'Otaku'},</p>
+      <p>Thank you for joining **AnimySaku Store**! Your account has been successfully created and you're now part of our community.</p>
+      
+      <div style="background-color: #000; padding: 15px; border-radius: 5px; margin: 20px 0; border: 1px solid rgba(238, 16, 16, 0.4); font-size: 14px;">
+        <strong>Registered Email/Login ID:</strong> ${email}
+      </div>
+
+      <p>Explore our premium collections of anime posters, stickers, combopacks, and more, all styled with our signature high-end neon aesthetic.</p>
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}" style="background-color: #ee1010; color: #000; font-weight: bold; text-decoration: none; padding: 12px 25px; border-radius: 5px; text-transform: uppercase; letter-spacing: 1px; display: inline-block; border: 1px solid #ee1010;">Start Shopping</a>
+      </div>
+      <p>If you have any questions or feedback, feel free to reply to this email.</p>
+      <p style="border-top: 1px solid #ee1010; padding-top: 10px; font-size: 12px; color: #999; text-align: center;">
+        This is an automated email, please do not reply.
+      </p>
+    </div>
+  `;
+  const text = `Hi ${name || 'Otaku'},\n\nWelcome to AnimySaku Store! Your account has been created successfully.\n\nRegistered Email/Login ID: ${email}\n\nStart shopping here: ${process.env.CLIENT_URL || 'http://localhost:5173'}\n\nThank you,\nAnimySaku Store`;
+
+  return await sendEmail({ to: email, subject, html, text });
+};
+
+/**
+ * Send Security Alert / Login Notification Email
+ */
+export const sendLoginNotificationEmail = async (email, name, ip, userAgent) => {
+  const subject = 'Security Alert: New Login - AnimySaku Store';
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ee1010; border-radius: 10px; background-color: #1a1a18; color: #c9c9c9;">
+      <h2 style="color: #ee1010; border-bottom: 2px solid #ee1010; padding-bottom: 10px; text-transform: uppercase; letter-spacing: 2px;">New Account Login</h2>
+      <p>Hi ${name || 'Otaku'},</p>
+      <p>We detected a new login to your **AnimySaku Store** account.</p>
+      <div style="background-color: #000; padding: 15px; border-radius: 5px; margin: 20px 0; border: 1px solid rgba(238, 16, 16, 0.4); font-size: 14px; line-height: 1.6;">
+        <strong>Time:</strong> ${new Date().toUTCString()}<br/>
+        <strong>IP Address:</strong> ${ip || 'Unknown'}<br/>
+        <strong>Browser/Device:</strong> ${userAgent || 'Unknown'}
+      </div>
+      <p>If this was you, no action is needed. If you do not recognize this login, please reset your password immediately using the "Forgot Password" feature on our website.</p>
+      <p style="border-top: 1px solid #ee1010; padding-top: 10px; font-size: 12px; color: #999;">
+        This is an automated security email, please do not reply.
+      </p>
+    </div>
+  `;
+  const text = `Hi ${name || 'Otaku'},\n\nWe detected a new login to your AnimySaku Store account.\n\nTime: ${new Date().toUTCString()}\nIP: ${ip || 'Unknown'}\nDevice: ${userAgent || 'Unknown'}\n\nIf this wasn't you, reset your password immediately.`;
+
+  return await sendEmail({ to: email, subject, html, text });
+};

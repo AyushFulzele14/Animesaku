@@ -21,7 +21,7 @@ interface AuthContextValue {
   user: User | null;
   loading: boolean;
   error: string | null;
-  signUp: (name: string, email: string, password: string, role: 'customer' | 'admin') => Promise<void>;
+  signUp: (name: string, email: string, password: string, role?: 'customer' | 'admin') => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   isAuthenticated: boolean;
@@ -180,6 +180,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {

@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState, useRef } from 'react';
+import { FormEvent, useEffect, useState, useRef, useMemo } from 'react';
 import { ShoppingCart, Heart, User, Menu, X, Package } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Logo } from './Logo';
@@ -26,11 +26,11 @@ export function Navbar() {
 
   const circleRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const tlRefs = useRef<gsap.core.Timeline[]>([]);
-  const activeTweenRefs = useRef<any[]>([]);
+  const activeTweenRefs = useRef<(gsap.core.Tween | null)[]>([]);
 
   const [activeHash, setActiveHash] = useState(window.location.hash || '#home');
 
-  const navItems = [
+  const navItems = useMemo(() => [
     { label: 'Home', href: '#home' },
     { label: 'Shop', href: '#shop' },
     { label: 'Collections', href: '#collections' },
@@ -39,7 +39,7 @@ export function Navbar() {
       { label: 'Orders', href: '#admin-orders' }
     ] : []),
     { label: 'Contact', href: '#contact' }
-  ];
+  ], [isAdmin]);
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -135,7 +135,6 @@ export function Navbar() {
   const [signupName, setSignupName] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
-  const [signupRole, setSignupRole] = useState<'customer' | 'admin'>('customer');
 
   useEffect(() => {
     const syncWishlistCount = () => {
@@ -163,7 +162,6 @@ export function Navbar() {
     setSignupName('');
     setSignupEmail('');
     setSignupPassword('');
-    setSignupRole('customer');
   };
 
   const [authSubmitting, setAuthSubmitting] = useState(false);
@@ -180,7 +178,7 @@ export function Navbar() {
 
   const handleSignup = async (event: FormEvent) => {
     event.preventDefault();
-    await signUp(signupName, signupEmail, signupPassword, signupRole);
+    await signUp(signupName, signupEmail, signupPassword);
   };
 
   return (
@@ -370,7 +368,11 @@ export function Navbar() {
                 whileHover={{ scale: 1.1 }}
                 onClick={() => {
                   setIsOpen(false);
-                  user ? setAuthModalOpen(true) : openAuthModal('login');
+                  if (user) {
+                    setAuthModalOpen(true);
+                  } else {
+                    openAuthModal('login');
+                  }
                 }}
                 className="p-2 rounded-full hover:bg-primary-red/10"
               >
@@ -543,33 +545,7 @@ export function Navbar() {
                         placeholder="Password"
                         className="input"
                       />
-                      <div className="flex flex-col gap-2 my-3">
-                        <label className="text-xs uppercase tracking-wider text-silver-white/60 font-semibold">Account Role</label>
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setSignupRole('customer')}
-                            className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold border transition-all ${
-                              signupRole === 'customer'
-                                ? 'bg-primary-red text-black border-primary-red'
-                                : 'bg-black/40 border-primary-red/20 text-silver-white/60 hover:border-primary-red/55'
-                            }`}
-                          >
-                            Customer
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setSignupRole('admin')}
-                            className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold border transition-all ${
-                              signupRole === 'admin'
-                                ? 'bg-primary-red text-black border-primary-red'
-                                : 'bg-black/40 border-primary-red/20 text-silver-white/60 hover:border-primary-red/55'
-                            }`}
-                          >
-                            Admin
-                          </button>
-                        </div>
-                      </div>
+
                       <button type="submit" className="w-full bg-primary-red text-black rounded-lg px-4 py-2 font-semibold hover:opacity-95 transition-opacity">
                         Create account
                       </button>

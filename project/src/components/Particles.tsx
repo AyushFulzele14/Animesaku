@@ -108,11 +108,11 @@ export function Particles({
         // 3D rotation
         // Y-axis rotation
         let x1 = particle.x * cosY - particle.z * sinY;
-        let z1 = particle.z * cosY + particle.x * sinY;
+        const z1 = particle.z * cosY + particle.x * sinY;
 
         // X-axis rotation
         let y2 = particle.y * cosX - z1 * sinX;
-        let z2 = z1 * cosX + particle.y * sinX;
+        const z2 = z1 * cosX + particle.y * sinX;
 
         // Mouse hover interaction
         if (moveParticlesOnHover && mouseRef.current.active) {

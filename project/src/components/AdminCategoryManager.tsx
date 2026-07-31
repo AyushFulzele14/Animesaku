@@ -51,7 +51,6 @@ export function AdminCategoryManager() {
 
   useEffect(() => {
     loadCategories().catch(() => setMessage("Failed to load categories."));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleCreateCategory = async () => {

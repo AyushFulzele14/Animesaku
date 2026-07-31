@@ -3,7 +3,8 @@ import { Cart } from '../models/Cart.js';
 import { ApiError } from '../utils/apiError.js';
 import { ApiResponse } from '../utils/apiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
-import { sendOtpEmail } from '../services/mailService.js';
+import { sendOtpEmail, sendWelcomeEmail, sendLoginNotificationEmail } from '../services/mailService.js';
+import { logger } from '../config/logger.js';
 import jwt from 'jsonwebtoken';
 
 /**
@@ -24,7 +25,7 @@ const formatUser = (user) => ({
  * Register User
  */
 export const registerUser = asyncHandler(async (req, res) => {
-  const { name, password, role } = req.body;
+  const { name, password } = req.body;
   const email = String(req.body.email || '').trim().toLowerCase();
 
   // Check if user exists
@@ -33,8 +34,8 @@ export const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'User with this email already registered');
   }
 
-  // Create User
-  const user = await User.create({ name, email, password, role: role || 'customer' });
+  // Create User (force role to customer for public registration)
+  const user = await User.create({ name, email, password, role: 'customer' });
 
   // Automatically initialize a blank Shopping Cart for the user
   await Cart.create({ user: user._id, items: [] });
@@ -45,6 +46,11 @@ export const registerUser = asyncHandler(async (req, res) => {
   // Save refresh token in database
   user.refreshToken = refreshToken;
   await user.save();
+
+  // Send Welcome Email asynchronously
+  sendWelcomeEmail(user.email, user.name).catch((err) => {
+    logger.error(`Failed to send welcome email: ${err.message}`);
+  });
 
   // Set HTTP-Only Cookie for Refresh Token
   res.cookie('refreshToken', refreshToken, {
@@ -83,6 +89,13 @@ export const loginUser = asyncHandler(async (req, res) => {
 
   user.refreshToken = refreshToken;
   await user.save();
+
+  // Send Login Notification Email asynchronously
+  const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const userAgent = req.headers['user-agent'];
+  sendLoginNotificationEmail(user.email, user.name, ip, userAgent).catch((err) => {
+    logger.error(`Failed to send login notification email: ${err.message}`);
+  });
 
   // Set Refresh Token Cookie
   res.cookie('refreshToken', refreshToken, {
