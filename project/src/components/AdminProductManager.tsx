@@ -27,6 +27,7 @@ export function AdminProductManager() {
   const [tags, setTags] = useState("");
   const [featured, setFeatured] = useState(false);
   const [trending, setTrending] = useState(false);
+  const [sizes, setSizes] = useState<string[]>(["A3", "A4", "A5", "A6"]);
   const [images, setImages] = useState<FileList | null>(null);
   const { products, reloadProducts } = useProducts();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -62,8 +63,9 @@ export function AdminProductManager() {
       stockQuantity &&
       Number(stockQuantity) >= 0 &&
       dimensions.trim().length >= 2 &&
-      materialQuality.trim().length >= 2,
-    [title, animeName, isValidCategory, description, price, stockQuantity, dimensions, materialQuality]
+      materialQuality.trim().length >= 2 &&
+      sizes.length > 0,
+    [title, animeName, isValidCategory, description, price, stockQuantity, dimensions, materialQuality, sizes]
   );
 
   const getMissingFields = () => {
@@ -76,6 +78,7 @@ export function AdminProductManager() {
     if (!stockQuantity || Number(stockQuantity) < 0) missing.push("Stock Quantity");
     if (dimensions.trim().length < 2) missing.push("Dimensions");
     if (materialQuality.trim().length < 2) missing.push("Material Quality");
+    if (sizes.length === 0) missing.push("At least one size");
     return missing;
   };
   const createProductReason = useMemo(() => {
@@ -130,6 +133,7 @@ export function AdminProductManager() {
       formData.append("materialQuality", materialQuality);
       formData.append("featured", String(featured));
       formData.append("trending", String(trending));
+      formData.append("sizes", JSON.stringify(sizes));
 
       tags
         .split(",")
@@ -155,6 +159,7 @@ export function AdminProductManager() {
       setTags("");
       setFeatured(false);
       setTrending(false);
+      setSizes(["A3", "A4", "A5", "A6"]);
       setImages(null);
       // reload admin product list
       reloadProducts();
@@ -297,6 +302,27 @@ export function AdminProductManager() {
               <input type="checkbox" checked={trending} onChange={(e) => setTrending(e.target.checked)} />
               Trending
             </label>
+            <div className="md:col-span-2 flex flex-col gap-1 mb-2">
+              <span className="text-silver-white/80 text-sm font-semibold">Available Sizes:</span>
+              <div className="flex gap-4">
+                {["A3", "A4", "A5", "A6"].map((sz) => (
+                  <label key={sz} className="text-silver-white/80 flex items-center gap-1.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={sizes.includes(sz)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSizes((prev) => [...prev, sz]);
+                        } else {
+                          setSizes((prev) => prev.filter((x) => x !== sz));
+                        }
+                      }}
+                    />
+                    {sz}
+                  </label>
+                ))}
+              </div>
+            </div>
             <button
               disabled={loading}
               type="submit"

@@ -33,7 +33,7 @@ export const getCart = asyncHandler(async (req, res) => {
  * Add / Increment Item in Cart
  */
 export const addToCart = asyncHandler(async (req, res) => {
-  const { productId, quantity = 1, finishType = 'matte' } = req.body;
+  const { productId, quantity = 1, finishType = 'matte', size = 'A4' } = req.body;
   const userId = req.user._id;
 
   const product = await Product.findById(productId);
@@ -50,9 +50,9 @@ export const addToCart = asyncHandler(async (req, res) => {
     cart = await Cart.create({ user: userId, items: [] });
   }
 
-  // Check if item already exists in cart with same product and finish
+  // Check if item already exists in cart with same product, finish, and size
   const itemIndex = cart.items.findIndex(
-    (item) => item.product.toString() === productId && item.finishType === finishType
+    (item) => item.product.toString() === productId && item.finishType === finishType && item.size === size
   );
 
   if (itemIndex > -1) {
@@ -68,6 +68,7 @@ export const addToCart = asyncHandler(async (req, res) => {
       product: productId,
       quantity: Number(quantity),
       finishType,
+      size,
     });
   }
 
@@ -86,7 +87,7 @@ export const addToCart = asyncHandler(async (req, res) => {
  * Update Cart Item Quantity
  */
 export const updateCartQuantity = asyncHandler(async (req, res) => {
-  const { productId, quantity, finishType = 'matte' } = req.body;
+  const { productId, quantity, finishType = 'matte', size = 'A4' } = req.body;
   const userId = req.user._id;
 
   if (Number(quantity) < 1) {
@@ -108,7 +109,7 @@ export const updateCartQuantity = asyncHandler(async (req, res) => {
   }
 
   const itemIndex = cart.items.findIndex(
-    (item) => item.product.toString() === productId && item.finishType === finishType
+    (item) => item.product.toString() === productId && item.finishType === finishType && item.size === size
   );
 
   if (itemIndex === -1) {
@@ -131,7 +132,7 @@ export const updateCartQuantity = asyncHandler(async (req, res) => {
  */
 export const removeFromCart = asyncHandler(async (req, res) => {
   const { productId } = req.params;
-  const { finishType = 'matte' } = req.query; // If multiple finishTypes exist
+  const { finishType = 'matte', size = 'A4' } = req.query; // If multiple finishTypes/sizes exist
   const userId = req.user._id;
 
   const cart = await Cart.findOne({ user: userId });
@@ -139,9 +140,9 @@ export const removeFromCart = asyncHandler(async (req, res) => {
     throw new ApiError(404, 'Cart not found');
   }
 
-  // Filter out the item matching productId and optionally finishType
+  // Filter out the item matching productId, finishType, and size
   cart.items = cart.items.filter(
-    (item) => !(item.product.toString() === productId && (!finishType || item.finishType === finishType))
+    (item) => !(item.product.toString() === productId && (!finishType || item.finishType === finishType) && (!size || item.size === size))
   );
 
   await cart.save();

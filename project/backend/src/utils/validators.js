@@ -60,6 +60,22 @@ export const productSchema = z.object({
   finishType: z
     .preprocess((val) => (val === '' || val === undefined ? 'matte' : val), z.enum(['matte', 'glossy', 'both']))
     .default('matte'),
+  sizes: z
+    .preprocess(
+      (val) => {
+        if (val === undefined || val === null || val === '') return ['A3', 'A4', 'A5', 'A6'];
+        if (typeof val === 'string') {
+          try {
+            return JSON.parse(val);
+          } catch {
+            return val.split(',').map((s) => s.trim());
+          }
+        }
+        return val;
+      },
+      z.array(z.enum(['A3', 'A4', 'A5', 'A6']))
+    )
+    .default(['A3', 'A4', 'A5', 'A6']),
   featured: z.preprocess((val) => val === 'true' || val === true, z.boolean()).optional(),
   trending: z.preprocess((val) => val === 'true' || val === true, z.boolean()).optional(),
   newArrival: z.preprocess((val) => val === 'true' || val === true, z.boolean()).optional(),

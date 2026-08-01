@@ -17,6 +17,11 @@ const cartItemSchema = new mongoose.Schema({
     enum: ['matte', 'glossy'],
     default: 'matte',
   },
+  size: {
+    type: String,
+    enum: ['A3', 'A4', 'A5', 'A6'],
+    default: 'A4',
+  },
 });
 
 const cartSchema = new mongoose.Schema(

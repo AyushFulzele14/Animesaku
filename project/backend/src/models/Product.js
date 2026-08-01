@@ -64,6 +64,11 @@ const productSchema = new mongoose.Schema(
       default: [],
       index: true,
     },
+    sizes: {
+      type: [String],
+      enum: ['A3', 'A4', 'A5', 'A6'],
+      default: ['A3', 'A4', 'A5', 'A6'],
+    },
     dimensions: {
       type: String,
       required: [true, 'Dimensions are required (e.g. 12x18 inches)'],

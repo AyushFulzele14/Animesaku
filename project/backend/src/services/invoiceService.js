@@ -9,7 +9,7 @@ export const generateHtmlInvoice = (order) => {
     <tr>
       <td style="padding: 10px; border-bottom: 1px solid rgba(238, 16, 16, 0.1); color: #c9c9c9;">
         <strong>${item.product.title}</strong><br>
-        <span style="font-size: 11px; color: #999;">Anime: ${item.product.animeName} | Finish: ${item.finishType}</span>
+        <span style="font-size: 11px; color: #999;">Anime: ${item.product.animeName} | Size: ${item.size || 'A4'} | Finish: ${item.finishType}</span>
       </td>
       <td style="padding: 10px; border-bottom: 1px solid rgba(238, 16, 16, 0.1); text-align: center; color: #c9c9c9;">₹${item.price.toFixed(2)}</td>
       <td style="padding: 10px; border-bottom: 1px solid rgba(238, 16, 16, 0.1); text-align: center; color: #c9c9c9;">${item.quantity}</td>

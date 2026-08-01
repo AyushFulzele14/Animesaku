@@ -12,6 +12,7 @@ export interface Product {
   description: string;
   featured?: boolean;
   trending?: boolean;
+  sizes?: string[];
 }
 
 export interface Collection {
@@ -23,4 +24,6 @@ export interface Collection {
 export interface CartItem {
   product: Product;
   quantity: number;
+  finishType?: "matte" | "glossy";
+  size?: "A3" | "A4" | "A5" | "A6";
 }

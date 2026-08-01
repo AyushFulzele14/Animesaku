@@ -49,6 +49,7 @@ export const createOrder = asyncHandler(async (req, res) => {
       quantity: item.quantity,
       price: finalPrice,
       finishType: item.finishType,
+      size: item.size || 'A4',
     });
   }
 

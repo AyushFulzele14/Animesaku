@@ -29,6 +29,7 @@ interface ProductDetails {
   stockQuantity: number;
   dimensions?: string;
   materialQuality?: string;
+  sizes?: string[];
   reviews: Review[];
 }
 
@@ -49,6 +50,8 @@ export function ProductDetailModal({ productId, onClose }: ProductDetailModalPro
   const [newComment, setNewComment] = useState('');
   const [submittingReview, setSubmittingReview] = useState(false);
   const [reviewMessage, setReviewMessage] = useState<string | null>(null);
+  const [selectedSize, setSelectedSize] = useState<"A3" | "A4" | "A5" | "A6">("A4");
+  const [selectedFinish, setSelectedFinish] = useState<"matte" | "glossy">("matte");
 
   const fetchDetails = useCallback(async () => {
     if (!productId) return;
@@ -70,6 +73,8 @@ export function ProductDetailModal({ productId, onClose }: ProductDetailModalPro
       setReviewMessage(null);
       setNewComment('');
       setNewRating(5);
+      setSelectedSize("A4");
+      setSelectedFinish("matte");
     }
   }, [productId, fetchDetails]);
 
@@ -111,7 +116,7 @@ export function ProductDetailModal({ productId, onClose }: ProductDetailModalPro
       reviews: details.numOfReviews,
       description: details.description,
     };
-    void addToCart(prod);
+    void addToCart(prod, selectedFinish, selectedSize);
   };
 
   return (
@@ -277,6 +282,36 @@ export function ProductDetailModal({ productId, onClose }: ProductDetailModalPro
                         <p className="text-sm font-semibold text-silver-white mt-0.5">
                           {details.materialQuality || (details.type === 'poster' ? '300 GSM Matte Paper' : 'Premium Vinyl (Waterproof)')}
                         </p>
+                      </div>
+                    </div>
+
+                    {/* Size and Finish Selection */}
+                    <div className="grid grid-cols-2 gap-4 bg-black/40 border border-primary-red/10 p-4 rounded-2xl">
+                      {/* Size Selector */}
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs text-silver-white/50 uppercase font-semibold">Select Size</label>
+                        <select
+                          value={selectedSize}
+                          onChange={(e) => setSelectedSize(e.target.value as any)}
+                          className="bg-matte-black border border-primary-red/30 rounded-xl px-3 py-2 text-sm text-silver-white focus:outline-none focus:border-primary-red"
+                        >
+                          {(details.sizes || ['A3', 'A4', 'A5', 'A6']).map((sz) => (
+                            <option key={sz} value={sz}>{sz}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Finish Selector */}
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs text-silver-white/50 uppercase font-semibold">Select Finish</label>
+                        <select
+                          value={selectedFinish}
+                          onChange={(e) => setSelectedFinish(e.target.value as any)}
+                          className="bg-matte-black border border-primary-red/30 rounded-xl px-3 py-2 text-sm text-silver-white focus:outline-none focus:border-primary-red"
+                        >
+                          <option value="matte">Matte</option>
+                          <option value="glossy">Glossy</option>
+                        </select>
                       </div>
                     </div>
 

@@ -183,7 +183,7 @@ export function CartDrawer() {
             </div>
           ) : (
             cart.map((item) => (
-              <div key={item.product.id} className="grid grid-cols-[auto_1fr] gap-4 rounded-3xl border border-primary-red/20 p-4 bg-black/70">
+              <div key={`${item.product.id}-${item.size || 'A4'}-${item.finishType || 'matte'}`} className="grid grid-cols-[auto_1fr] gap-4 rounded-3xl border border-primary-red/20 p-4 bg-black/70">
                 <img
                   src={resolveAssetUrl(item.product.image)}
                   alt={item.product.title}
@@ -199,7 +199,12 @@ export function CartDrawer() {
                 <div className="flex flex-col justify-between">
                   <div>
                     <h3 className="text-lg font-semibold text-silver-white">{item.product.title}</h3>
-                    <p className="text-silver-white/60 text-sm">{item.product.animeName}</p>
+                    <p className="text-silver-white/60 text-sm">
+                      {item.product.animeName}
+                      <span className="text-xs text-silver-white/40 block mt-0.5">
+                        Size: {item.size || 'A4'} | Finish: {item.finishType || 'matte'}
+                      </span>
+                    </p>
                     <p className="text-primary-red font-bold mt-2">{formatINR(item.product.discountPrice || item.product.price)}</p>
                   </div>
 
@@ -207,7 +212,7 @@ export function CartDrawer() {
                     <div className="flex items-center rounded-full bg-matte-black/80 border border-primary-red/30 overflow-hidden">
                       <button
                         type="button"
-                        onClick={() => updateQuantity(item.product.id, Math.max(1, item.quantity - 1))}
+                        onClick={() => updateQuantity(item.product.id, Math.max(1, item.quantity - 1), item.finishType, item.size)}
                         className="px-3 py-2 hover:bg-primary-red/10"
                       >
                         <Minus className="w-4 h-4 text-silver-white" />
@@ -215,7 +220,7 @@ export function CartDrawer() {
                       <span className="px-4 text-silver-white">{item.quantity}</span>
                       <button
                         type="button"
-                        onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                        onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.finishType, item.size)}
                         className="px-3 py-2 hover:bg-primary-red/10"
                       >
                         <Plus className="w-4 h-4 text-silver-white" />
@@ -223,7 +228,7 @@ export function CartDrawer() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => removeFromCart(item.product.id)}
+                      onClick={() => removeFromCart(item.product.id, item.finishType, item.size)}
                       className="p-2 rounded-full hover:bg-primary-red/20"
                     >
                       <Trash2 className="w-5 h-5 text-silver-white" />

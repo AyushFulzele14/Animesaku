@@ -38,6 +38,7 @@ export const createProduct = asyncHandler(async (req, res) => {
     dimensions,
     materialQuality,
     finishType,
+    sizes,
     featured,
     trending,
   } = req.body;
@@ -117,6 +118,7 @@ export const createProduct = asyncHandler(async (req, res) => {
     dimensions,
     materialQuality,
     finishType: finishType || 'matte',
+    sizes,
     featured: featured === 'true' || featured === true,
     trending: trending === 'true' || trending === true,
     tags,
@@ -134,6 +136,16 @@ export const createProduct = asyncHandler(async (req, res) => {
 export const updateProduct = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const updateData = req.body;
+
+  if (updateData.sizes) {
+    if (typeof updateData.sizes === 'string') {
+      try {
+        updateData.sizes = JSON.parse(updateData.sizes);
+      } catch {
+        updateData.sizes = updateData.sizes.split(',').map((s) => s.trim());
+      }
+    }
+  }
 
   const product = await Product.findById(id);
   if (!product) {

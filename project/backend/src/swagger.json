@@ -52,6 +52,7 @@
           "dimensions": { "type": "string" },
           "materialQuality": { "type": "string" },
           "finishType": { "type": "string", "enum": ["matte", "glossy", "both"] },
+          "sizes": { "type": "array", "items": { "type": "string", "enum": ["A3", "A4", "A5", "A6"] } },
           "ratings": { "type": "number" },
           "numOfReviews": { "type": "integer" }
         }
@@ -148,7 +149,8 @@
                 "properties": {
                   "productId": { "type": "string" },
                   "quantity": { "type": "integer", "default": 1 },
-                  "finishType": { "type": "string", "enum": ["matte", "glossy"], "default": "matte" }
+                  "finishType": { "type": "string", "enum": ["matte", "glossy"], "default": "matte" },
+                  "size": { "type": "string", "enum": ["A3", "A4", "A5", "A6"], "default": "A4" }
                 }
               }
             }

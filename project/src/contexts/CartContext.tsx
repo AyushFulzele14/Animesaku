@@ -10,9 +10,9 @@ interface CartContextValue {
   openCart: () => void;
   closeCart: () => void;
   toggleCart: () => void;
-  addToCart: (product: Product) => Promise<void>;
-  removeFromCart: (productId: string) => Promise<void>;
-  updateQuantity: (productId: string, quantity: number) => Promise<void>;
+  addToCart: (product: Product, finishType?: "matte" | "glossy", size?: "A3" | "A4" | "A5" | "A6") => Promise<void>;
+  removeFromCart: (productId: string, finishType?: "matte" | "glossy", size?: "A3" | "A4" | "A5" | "A6") => Promise<void>;
+  updateQuantity: (productId: string, quantity: number, finishType?: "matte" | "glossy", size?: "A3" | "A4" | "A5" | "A6") => Promise<void>;
   clearCart: () => void;
 }
 
@@ -35,11 +35,14 @@ interface RawProduct {
   description?: string;
   featured?: boolean;
   trending?: boolean;
+  sizes?: string[];
 }
 
 interface RawCartItem {
   product?: RawProduct;
   quantity?: number;
+  finishType?: "matte" | "glossy";
+  size?: "A3" | "A4" | "A5" | "A6";
 }
 
 function normalizeProduct(raw: RawProduct): Product {
@@ -62,6 +65,7 @@ function normalizeProduct(raw: RawProduct): Product {
     description: raw.description ?? '',
     featured: raw.featured,
     trending: raw.trending,
+    sizes: raw.sizes || ['A3', 'A4', 'A5', 'A6'],
   };
 }
 
@@ -69,6 +73,8 @@ function normalizeCartItems(items: RawCartItem[]): CartItem[] {
   return items.map((item) => ({
     product: normalizeProduct(item.product ?? {}),
     quantity: Number(item.quantity ?? 1),
+    finishType: item.finishType || 'matte',
+    size: item.size || 'A4',
   }));
 }
 
@@ -76,13 +82,15 @@ function loadGuestCart(): CartItem[] {
   try {
     const stored = localStorage.getItem(GUEST_CART_KEY);
     if (!stored) return [];
-    const parsed = JSON.parse(stored) as Array<{ product: Product; quantity: number }>;
+    const parsed = JSON.parse(stored) as Array<{ product: Product; quantity: number; finishType?: "matte" | "glossy"; size?: "A3" | "A4" | "A5" | "A6" }>;
     return parsed.map((item) => ({
       product: {
         ...item.product,
         image: resolveAssetUrl(item.product.image),
       },
       quantity: Number(item.quantity ?? 1),
+      finishType: item.finishType || 'matte',
+      size: item.size || 'A4',
     }));
   } catch {
     return [];
@@ -144,17 +152,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const toggleCart = useCallback(() => setIsCartOpen((open) => !open), []);
 
   const addToCart = useCallback(
-    async (product: Product) => {
+    async (product: Product, finishType: "matte" | "glossy" = "matte", size: "A3" | "A4" | "A5" | "A6" = "A4") => {
       setCartAndPersist((prev) => {
-        const existing = prev.find((item) => item.product.id === product.id);
+        const existing = prev.find(
+          (item) => item.product.id === product.id && item.finishType === finishType && item.size === size
+        );
         if (existing) {
           return prev.map((item) =>
-            item.product.id === product.id
+            item.product.id === product.id && item.finishType === finishType && item.size === size
               ? { ...item, quantity: item.quantity + 1 }
               : item
           );
         }
-        return [...prev, { product, quantity: 1 }];
+        return [...prev, { product, quantity: 1, finishType, size }];
       });
 
       if (window.innerWidth < 768) {
@@ -163,7 +173,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       if (isAuthenticated) {
         try {
-          await api.post('/cart', { productId: product.id, quantity: 1 });
+          await api.post('/cart', { productId: product.id, quantity: 1, finishType, size });
         } catch {
           // keep fallback cart state
         }
@@ -173,11 +183,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 
   const removeFromCart = useCallback(
-    async (productId: string) => {
-      setCartAndPersist((prev) => prev.filter((item) => item.product.id !== productId));
+    async (productId: string, finishType?: "matte" | "glossy", size?: "A3" | "A4" | "A5" | "A6") => {
+      setCartAndPersist((prev) =>
+        prev.filter(
+          (item) =>
+            !(
+              item.product.id === productId &&
+              (!finishType || item.finishType === finishType) &&
+              (!size || item.size === size)
+            )
+        )
+      );
       if (isAuthenticated) {
         try {
-          await api.delete(`/cart/${productId}`);
+          const queryParams = new URLSearchParams();
+          if (finishType) queryParams.append('finishType', finishType);
+          if (size) queryParams.append('size', size);
+          await api.delete(`/cart/${productId}?${queryParams.toString()}`);
         } catch {
           // ignore
         }
@@ -187,15 +209,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 
   const updateQuantity = useCallback(
-    async (productId: string, quantity: number) => {
+    async (
+      productId: string,
+      quantity: number,
+      finishType: "matte" | "glossy" = "matte",
+      size: "A3" | "A4" | "A5" | "A6" = "A4"
+    ) => {
       setCartAndPersist((prev) =>
         prev.map((item) =>
-          item.product.id === productId ? { ...item, quantity } : item
+          item.product.id === productId && item.finishType === finishType && item.size === size
+            ? { ...item, quantity }
+            : item
         )
       );
       if (isAuthenticated) {
         try {
-          await api.patch('/cart', { productId, quantity });
+          await api.patch('/cart', { productId, quantity, finishType, size });
         } catch {
           // ignore
         }
