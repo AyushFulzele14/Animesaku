@@ -34,6 +34,51 @@ const getTransporter = () => {
  * Send email helper
  */
 export const sendEmail = async ({ to, subject, html, text }) => {
+  const host = process.env.SMTP_HOST;
+  const apiKey = process.env.SMTP_PASS;
+  const senderEmail = process.env.SMTP_USER;
+
+  // If using Brevo, send via HTTPS API to bypass Render's outbound port restrictions!
+  if (host === 'smtp-relay.brevo.com' && apiKey && (apiKey.startsWith('xsmtpsib-') || apiKey.startsWith('xkeysib-'))) {
+    try {
+      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'api-key': apiKey,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          sender: {
+            name: 'AnimySaku Store',
+            email: senderEmail,
+          },
+          to: [
+            {
+              email: to,
+            },
+          ],
+          subject: subject,
+          htmlContent: html,
+          textContent: text || subject || 'AnimySaku Store',
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        logger.info(`Email sent successfully via Brevo HTTP API: ${data.messageId || 'Success'}`);
+        return true;
+      } else {
+        logger.error(`Error sending email via Brevo HTTP API: ${JSON.stringify(data)}`);
+        return false;
+      }
+    } catch (error) {
+      logger.error(`Error sending email to ${to} via Brevo API: ${error.message}`);
+      return false;
+    }
+  }
+
   const mailClient = getTransporter();
 
   if (!mailClient) {
