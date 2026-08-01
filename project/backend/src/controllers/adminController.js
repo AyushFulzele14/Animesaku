@@ -248,6 +248,11 @@ export const createCategory = asyncHandler(async (req, res) => {
   const name = String(req.body.name || '').trim();
 
   if (name.length < 2) {
+    if (req.file) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (err) {}
+    }
     throw new ApiError(400, 'Category name must be at least 2 characters');
   }
 
@@ -258,10 +263,51 @@ export const createCategory = asyncHandler(async (req, res) => {
   });
 
   if (existing) {
+    if (req.file) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (err) {}
+    }
     throw new ApiError(400, 'Category with this name already exists');
   }
 
-  const category = await Category.create({ name, slug });
+  let categoryImage = undefined;
+  if (req.file) {
+    const file = req.file;
+    const isCloudinaryConfigured = process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET;
+    if (isCloudinaryConfigured) {
+      try {
+        const result = await cloudinary.uploader.upload(file.path, {
+          folder: 'anime-categories',
+          fetch_format: 'auto',
+          quality: 'auto:good',
+          resource_type: 'image',
+        });
+        categoryImage = {
+          public_id: result.public_id,
+          url: result.secure_url,
+        };
+        try {
+          fs.unlinkSync(file.path);
+        } catch (err) {
+          logger.error(`Failed to delete local temp file ${file.path}: ${err.message}`);
+        }
+      } catch (uploadError) {
+        logger.error(`Cloudinary upload failed for ${file.path}: ${uploadError.message}. Falling back to local URL.`);
+        categoryImage = {
+          public_id: file.filename || '',
+          url: toPublicUploadUrl(file),
+        };
+      }
+    } else {
+      categoryImage = {
+        public_id: file.filename || '',
+        url: toPublicUploadUrl(file),
+      };
+    }
+  }
+
+  const category = await Category.create({ name, slug, image: categoryImage });
   return res.status(201).json(new ApiResponse(201, category, 'Category created successfully'));
 });
 
@@ -273,11 +319,21 @@ export const updateCategory = asyncHandler(async (req, res) => {
   const name = String(req.body.name || '').trim();
 
   if (name.length < 2) {
+    if (req.file) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (err) {}
+    }
     throw new ApiError(400, 'Category name must be at least 2 characters');
   }
 
   const category = await Category.findById(id);
   if (!category) {
+    if (req.file) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (err) {}
+    }
     throw new ApiError(404, 'Category not found');
   }
 
@@ -288,11 +344,63 @@ export const updateCategory = asyncHandler(async (req, res) => {
   });
 
   if (duplicate) {
+    if (req.file) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (err) {}
+    }
     throw new ApiError(400, 'Category with this name already exists');
+  }
+
+  let categoryImage = category.image;
+  if (req.file) {
+    const file = req.file;
+    const isCloudinaryConfigured = process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET;
+    if (isCloudinaryConfigured) {
+      try {
+        const result = await cloudinary.uploader.upload(file.path, {
+          folder: 'anime-categories',
+          fetch_format: 'auto',
+          quality: 'auto:good',
+          resource_type: 'image',
+        });
+
+        // Delete old Cloudinary category image if it exists
+        if (category.image && category.image.public_id && category.image.public_id.startsWith('anime-categories/')) {
+          try {
+            await cloudinary.uploader.destroy(category.image.public_id);
+          } catch (err) {
+            logger.error(`Failed to destroy old Cloudinary category image: ${err.message}`);
+          }
+        }
+
+        categoryImage = {
+          public_id: result.public_id,
+          url: result.secure_url,
+        };
+        try {
+          fs.unlinkSync(file.path);
+        } catch (err) {
+          logger.error(`Failed to delete local temp file ${file.path}: ${err.message}`);
+        }
+      } catch (uploadError) {
+        logger.error(`Cloudinary upload failed for ${file.path}: ${uploadError.message}. Falling back to local URL.`);
+        categoryImage = {
+          public_id: file.filename || '',
+          url: toPublicUploadUrl(file),
+        };
+      }
+    } else {
+      categoryImage = {
+        public_id: file.filename || '',
+        url: toPublicUploadUrl(file),
+      };
+    }
   }
 
   category.name = name;
   category.slug = slug;
+  category.image = categoryImage;
   await category.save();
 
   await clearProductsCache();

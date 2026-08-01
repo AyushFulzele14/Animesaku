@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import * as Icons from 'lucide-react';
-import { api } from '../lib/api';
+import { api, resolveAssetUrl } from '../lib/api';
 
 type ShopCategory = string;
 
@@ -12,6 +12,10 @@ interface CollectionsProps {
 interface Category {
   _id: string;
   name: string;
+  image?: {
+    public_id?: string;
+    url?: string;
+  };
 }
 
 export function Collections({ onSelectCategory }: CollectionsProps) {
@@ -106,7 +110,7 @@ export function Collections({ onSelectCategory }: CollectionsProps) {
                   <div
                     className="absolute inset-0 transition-transform duration-700 ease-out group-hover:scale-110 z-0"
                     style={{
-                      backgroundImage: `url(${details.bg})`,
+                      backgroundImage: `url(${cat.image?.url ? resolveAssetUrl(cat.image.url) : details.bg})`,
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
                     }}

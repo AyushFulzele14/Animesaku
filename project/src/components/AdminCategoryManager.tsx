@@ -1,10 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
-import { api } from "../lib/api";
+import { api, resolveAssetUrl } from "../lib/api";
 import { useAuth } from "../hooks";
 
 interface Category {
   _id: string;
   name: string;
+  image?: {
+    public_id?: string;
+    url?: string;
+  };
 }
 
 export function AdminCategoryManager() {
@@ -13,8 +17,11 @@ export function AdminCategoryManager() {
   const [categories, setCategories] = useState<Category[]>([]);
 
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryImage, setNewCategoryImage] = useState<File | null>(null);
+
   const [editCategoryId, setEditCategoryId] = useState<string>("");
   const [editCategoryName, setEditCategoryName] = useState("");
+  const [editCategoryImage, setEditCategoryImage] = useState<File | null>(null);
 
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -67,10 +74,22 @@ export function AdminCategoryManager() {
     setLoading(true);
     setMessage(null);
     try {
-      await api.post("/categories", { name: trimmedName });
+      const formData = new FormData();
+      formData.append("name", trimmedName);
+      if (newCategoryImage) {
+        formData.append("image", newCategoryImage);
+      }
+
+      await api.post("/categories", formData);
       setNewCategoryName("");
+      setNewCategoryImage(null);
+      
+      // Clear file inputs on document if any
+      const fileInput = document.getElementById("new-category-img-input") as HTMLInputElement;
+      if (fileInput) fileInput.value = "";
+
       await loadCategories();
-      setMessage("Category created.");
+      setMessage("Category created successfully.");
       window.dispatchEvent(new Event("categories-changed"));
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Failed to create category");
@@ -84,11 +103,23 @@ export function AdminCategoryManager() {
     setLoading(true);
     setMessage(null);
     try {
-      await api.patch(`/categories/${editCategoryId}`, { name: editCategoryName.trim() });
+      const formData = new FormData();
+      formData.append("name", editCategoryName.trim());
+      if (editCategoryImage) {
+        formData.append("image", editCategoryImage);
+      }
+
+      await api.patch(`/categories/${editCategoryId}`, formData);
       setEditCategoryId("");
       setEditCategoryName("");
+      setEditCategoryImage(null);
+
+      // Clear file inputs on document if any
+      const fileInput = document.getElementById("edit-category-img-input") as HTMLInputElement;
+      if (fileInput) fileInput.value = "";
+
       await loadCategories();
-      setMessage("Category updated.");
+      setMessage("Category updated successfully.");
       window.dispatchEvent(new Event("categories-changed"));
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Failed to update category");
@@ -105,6 +136,7 @@ export function AdminCategoryManager() {
       await api.delete(`/categories/${id}`);
       await loadCategories();
       setMessage("Category deleted.");
+      window.dispatchEvent(new Event("categories-changed"));
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Failed to delete category");
     } finally {
@@ -134,34 +166,58 @@ export function AdminCategoryManager() {
         {authError && <p className="text-primary-red mb-3">{authError}</p>}
         {message && <p className="text-silver-white/80 mb-4">{message}</p>}
 
-        <div className="space-y-4">
+        <div className="space-y-6">
           <h3 className="text-xl font-bold text-silver-white">Categories</h3>
 
-          <div className="flex gap-3">
-            <input
-              value={newCategoryName}
-              onChange={(e) => setNewCategoryName(e.target.value)}
-              placeholder="New category name"
-              className="input"
-            />
-            <button
-              type="button"
-              disabled={!canCreateCategory || loading || !isAdmin}
-              className="bg-primary-red text-white rounded-lg px-4 py-2 font-semibold disabled:opacity-60"
-              onClick={handleCreateCategory}
-            >
-              Add
-            </button>
+          <div className="border border-primary-red/20 rounded-xl p-4 bg-black/40 space-y-4">
+            <h4 className="font-semibold text-silver-white">Create New Category</h4>
+            <div className="flex flex-col md:flex-row gap-3">
+              <input
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder="Category name"
+                className="input flex-1"
+              />
+              <button
+                type="button"
+                disabled={!canCreateCategory || loading || !isAdmin}
+                className="bg-primary-red text-white rounded-lg px-6 py-2 font-semibold disabled:opacity-60 shrink-0"
+                onClick={handleCreateCategory}
+              >
+                Add Category
+              </button>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs text-silver-white/60 font-semibold uppercase tracking-wider">
+                Category Background Image (Optional)
+              </label>
+              <input
+                id="new-category-img-input"
+                type="file"
+                accept="image/*"
+                onChange={(e) => setNewCategoryImage(e.target.files?.[0] || null)}
+                className="text-xs text-silver-white/80 file:bg-primary-red/10 file:text-primary-red file:border-0 file:rounded-md file:px-3 file:py-1.5 file:mr-3 file:font-semibold hover:file:bg-primary-red/20 file:cursor-pointer"
+              />
+            </div>
+            {(loading || !user || !isAdmin || !canCreateCategory) && (
+              <p className="text-silver-white/60 text-sm">{createCategoryReason}</p>
+            )}
           </div>
-          {(loading || !user || !isAdmin || !canCreateCategory) && (
-            <p className="text-silver-white/60 text-sm">{createCategoryReason}</p>
-          )}
 
-          <div className="space-y-3 max-h-56 overflow-y-auto pr-2">
+          <div className="space-y-3 max-h-72 overflow-y-auto pr-2">
             {categories.map((c) => (
-              <div key={c._id} className="border border-primary-red/20 rounded-lg p-3">
+              <div key={c._id} className="border border-primary-red/20 rounded-lg p-3 bg-black/40">
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-silver-white font-semibold">{c.name}</p>
+                  <div className="flex items-center gap-4">
+                    {c.image?.url && (
+                      <img
+                        src={resolveAssetUrl(c.image.url)}
+                        alt={c.name}
+                        className="w-12 h-12 object-cover rounded-lg border border-primary-red/20"
+                      />
+                    )}
+                    <p className="text-silver-white font-semibold">{c.name}</p>
+                  </div>
                   <div className="flex gap-2">
                     <button
                       type="button"
@@ -210,19 +266,31 @@ export function AdminCategoryManager() {
           </div>
 
           {editCategoryId && (
-            <div className="border border-primary-red/20 rounded-lg p-3 space-y-3">
-              <h4 className="font-semibold text-silver-white">Update category</h4>
+            <div className="border border-primary-red/20 rounded-lg p-4 bg-black/40 space-y-4">
+              <h4 className="font-semibold text-silver-white">Update Category Details</h4>
               <input
                 value={editCategoryName}
                 onChange={(e) => setEditCategoryName(e.target.value)}
                 className="input"
                 placeholder="Category name"
               />
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs text-silver-white/60 font-semibold uppercase tracking-wider">
+                  Update Background Image (Optional)
+                </label>
+                <input
+                  id="edit-category-img-input"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setEditCategoryImage(e.target.files?.[0] || null)}
+                  className="text-xs text-silver-white/80 file:bg-primary-red/10 file:text-primary-red file:border-0 file:rounded-md file:px-3 file:py-1.5 file:mr-3 file:font-semibold hover:file:bg-primary-red/20 file:cursor-pointer"
+                />
+              </div>
               <div className="flex gap-3">
                 <button
                   type="button"
                   disabled={!canUpdateCategory || loading || !isAdmin}
-                  className="bg-primary-red text-white rounded-lg px-4 py-2 font-semibold disabled:opacity-60"
+                  className="bg-primary-red text-white rounded-lg px-6 py-2 font-semibold disabled:opacity-60"
                   onClick={handleUpdateCategory}
                 >
                   Save
@@ -230,10 +298,11 @@ export function AdminCategoryManager() {
                 <button
                   type="button"
                   disabled={loading}
-                  className="bg-black/50 text-silver-white border border-primary-red/30 rounded-lg px-4 py-2 font-semibold disabled:opacity-60"
+                  className="bg-black/50 text-silver-white border border-primary-red/30 rounded-lg px-6 py-2 font-semibold disabled:opacity-60"
                   onClick={() => {
                     setEditCategoryId("");
                     setEditCategoryName("");
+                    setEditCategoryImage(null);
                   }}
                 >
                   Cancel
@@ -249,4 +318,3 @@ export function AdminCategoryManager() {
     </section>
   );
 }
-

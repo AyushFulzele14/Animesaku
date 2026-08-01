@@ -6,6 +6,7 @@ import {
   deleteCategory,
 } from '../controllers/adminController.js';
 import { protect, authorize } from '../middlewares/authMiddleware.js';
+import { upload } from '../middlewares/multer.js';
 
 const router = Router();
 
@@ -13,10 +14,10 @@ const router = Router();
 router.get('/', getAllCategories);
 
 // Admin Category Mutations (REST endpoints matching frontend category admin panels)
-router.post('/', protect, authorize('admin'), createCategory);
+router.post('/', protect, authorize('admin'), upload.single('image'), createCategory);
 
 router.route('/:id')
-  .patch(protect, authorize('admin'), updateCategory)
+  .patch(protect, authorize('admin'), upload.single('image'), updateCategory)
   .delete(protect, authorize('admin'), deleteCategory);
 
 export default router;
