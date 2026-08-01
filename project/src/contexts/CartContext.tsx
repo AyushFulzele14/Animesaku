@@ -157,6 +157,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
         return [...prev, { product, quantity: 1 }];
       });
 
+      if (window.innerWidth < 768) {
+        setIsCartOpen(true);
+      }
+
       if (isAuthenticated) {
         try {
           await api.post('/cart', { productId: product.id, quantity: 1 });
@@ -165,7 +169,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
       }
     },
-    [isAuthenticated, setCartAndPersist]
+    [isAuthenticated, setCartAndPersist, setIsCartOpen]
   );
 
   const removeFromCart = useCallback(

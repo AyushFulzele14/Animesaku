@@ -44,7 +44,7 @@ export function OrderConfirmation({ orderId, orderData, onDone }: ConfirmationPr
         initial={{ scale: 0.5, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 100 }}
-        className="bg-matte-black border border-primary-red/30 rounded-3xl max-w-md w-full overflow-hidden"
+        className="bg-matte-black border border-primary-red/30 rounded-3xl max-w-md w-full max-h-[95vh] flex flex-col overflow-hidden"
       >
         {/* Animated Success Icon */}
         <div className="p-8 text-center bg-black/50">
@@ -74,7 +74,7 @@ export function OrderConfirmation({ orderId, orderData, onDone }: ConfirmationPr
         </div>
 
         {/* Order Details */}
-        <div className="p-6 space-y-4 bg-black">
+        <div className="p-6 space-y-4 bg-black overflow-y-auto flex-1">
           {/* Order ID */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -143,6 +143,11 @@ export function OrderConfirmation({ orderId, orderData, onDone }: ConfirmationPr
                 href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => {
+                  setTimeout(() => {
+                    if (onDone) onDone();
+                  }, 100);
+                }}
                 className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-xl font-semibold text-sm transition-all shadow-lg"
               >
                 <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
