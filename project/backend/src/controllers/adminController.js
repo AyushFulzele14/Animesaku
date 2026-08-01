@@ -9,6 +9,7 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { cache } from '../config/redis.js';
 import { v2 as cloudinary } from 'cloudinary';
 import { logger } from '../config/logger.js';
+import fs from 'fs';
 
 const toPublicUploadUrl = (file) => `/uploads/${file.filename}`;
 
@@ -53,12 +54,40 @@ export const createProduct = asyncHandler(async (req, res) => {
   const images = [];
 
   if (req.files && req.files.length > 0) {
+    const isCloudinaryConfigured = process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET;
+
     for (const file of req.files) {
       if (file.path) {
-        images.push({
-          public_id: file.filename || '',
-          url: toPublicUploadUrl(file),
-        });
+        if (isCloudinaryConfigured) {
+          try {
+            const result = await cloudinary.uploader.upload(file.path, {
+              folder: 'anime-products',
+              fetch_format: 'auto',
+              quality: 'auto:good',
+              resource_type: 'image',
+            });
+            images.push({
+              public_id: result.public_id,
+              url: result.secure_url,
+            });
+            try {
+              fs.unlinkSync(file.path);
+            } catch (err) {
+              logger.error(`Failed to delete local temp file ${file.path}: ${err.message}`);
+            }
+          } catch (uploadError) {
+            logger.error(`Cloudinary upload failed for ${file.path}: ${uploadError.message}. Falling back to local URL.`);
+            images.push({
+              public_id: file.filename || '',
+              url: toPublicUploadUrl(file),
+            });
+          }
+        } else {
+          images.push({
+            public_id: file.filename || '',
+            url: toPublicUploadUrl(file),
+          });
+        }
       }
     }
   }
@@ -126,11 +155,41 @@ export const updateProduct = asyncHandler(async (req, res) => {
       }
     }
 
+    const isCloudinaryConfigured = process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET;
+
     for (const file of req.files) {
-      images.push({
-        public_id: file.filename || '',
-        url: toPublicUploadUrl(file),
-      });
+      if (file.path) {
+        if (isCloudinaryConfigured) {
+          try {
+            const result = await cloudinary.uploader.upload(file.path, {
+              folder: 'anime-products',
+              fetch_format: 'auto',
+              quality: 'auto:good',
+              resource_type: 'image',
+            });
+            images.push({
+              public_id: result.public_id,
+              url: result.secure_url,
+            });
+            try {
+              fs.unlinkSync(file.path);
+            } catch (err) {
+              logger.error(`Failed to delete local temp file ${file.path}: ${err.message}`);
+            }
+          } catch (uploadError) {
+            logger.error(`Cloudinary upload failed for ${file.path}: ${uploadError.message}. Falling back to local URL.`);
+            images.push({
+              public_id: file.filename || '',
+              url: toPublicUploadUrl(file),
+            });
+          }
+        } else {
+          images.push({
+            public_id: file.filename || '',
+            url: toPublicUploadUrl(file),
+          });
+        }
+      }
     }
     
     updateData.images = images;

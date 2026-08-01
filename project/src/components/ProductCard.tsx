@@ -73,6 +73,9 @@ export function ProductCard({ product, index = 0, onAddToCart }: ProductCardProp
             className="w-full h-full object-contain"
             whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.3 }}
+            onError={(e) => {
+              e.currentTarget.src = "https://images.pexels.com/photos/3587620/pexels-photo-3587620.jpeg?w=400&h=400&fit=crop";
+            }}
           />
           <div className="absolute bottom-0 right-0 w-24 h-24 opacity-10 pointer-events-none flex items-center justify-center">
             <Logo size="large" showGlow={false} />

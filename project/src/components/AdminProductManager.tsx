@@ -323,7 +323,14 @@ export function AdminProductManager() {
                 products.map((p) => (
                   <div key={p.id} className="flex items-center gap-3 bg-matte-black/60 p-3 rounded-md border border-primary-red/20">
                     <input type="checkbox" checked={selectedIds.includes(p.id)} onChange={() => toggleSelect(p.id)} />
-                    <img src={p.image} alt={p.title} className="w-16 h-16 object-cover rounded" />
+                    <img
+                      src={p.image}
+                      alt={p.title}
+                      className="w-16 h-16 object-cover rounded"
+                      onError={(e) => {
+                        e.currentTarget.src = "https://images.pexels.com/photos/3587620/pexels-photo-3587620.jpeg?w=400&h=400&fit=crop";
+                      }}
+                    />
                     <div className="flex-1">
                       <div className="text-silver-white font-medium">{p.title}</div>
                       <div className="text-silver-white/60 text-sm">{p.animeName} — {p.category}</div>

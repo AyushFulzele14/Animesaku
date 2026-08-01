@@ -91,6 +91,9 @@ export function WishlistModal({ isOpen, onClose }: WishlistModalProps) {
                       src={product.image}
                       alt={product.title}
                       className="h-20 w-20 rounded-xl object-cover border border-primary-red/10"
+                      onError={(e) => {
+                        e.currentTarget.src = "https://images.pexels.com/photos/3587620/pexels-photo-3587620.jpeg?w=400&h=400&fit=crop";
+                      }}
                     />
                     <div>
                       <h3 className="text-lg font-bold text-silver-white">{product.title}</h3>

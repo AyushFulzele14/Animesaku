@@ -167,6 +167,9 @@ export function ProductDetailModal({ productId, onClose }: ProductDetailModalPro
                         src={resolveAssetUrl(details.images?.[0]?.url)}
                         alt={details.title}
                         className="w-full h-full object-contain"
+                        onError={(e) => {
+                          e.currentTarget.src = "https://images.pexels.com/photos/3587620/pexels-photo-3587620.jpeg?w=400&h=400&fit=crop";
+                        }}
                       />
                       {details.discountPrice && details.discountPrice > 0 && (
                         <span className="absolute top-4 right-4 bg-primary-red px-3 py-1 rounded-full text-white text-xs font-bold shadow-neon-red">

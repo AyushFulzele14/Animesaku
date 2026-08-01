@@ -123,6 +123,9 @@ export function LiveSearch({ isOpen, onClose }: LiveSearchProps) {
                             src={product.image}
                             alt={product.title}
                             className="w-12 h-12 rounded object-cover"
+                            onError={(e) => {
+                              e.currentTarget.src = "https://images.pexels.com/photos/3587620/pexels-photo-3587620.jpeg?w=400&h=400&fit=crop";
+                            }}
                           />
                           <div className="flex-1">
                             <p className="text-silver-white font-semibold text-sm">

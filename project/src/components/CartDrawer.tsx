@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, Plus, Minus, Trash2 } from 'lucide-react';
 import { useAuth, useCart } from '../hooks';
-import { api } from '../lib/api';
+import { api, resolveAssetUrl } from '../lib/api';
 import { formatINR } from '../utils/currency';
 import { OrderConfirmation, ConfirmationProps } from './OrderConfirmation';
 
@@ -298,12 +298,15 @@ export function CartDrawer() {
             cart.map((item) => (
               <div key={item.product.id} className="grid grid-cols-[auto_1fr] gap-4 rounded-3xl border border-primary-red/20 p-4 bg-black/70">
                 <img
-                  src={item.product.image}
+                  src={resolveAssetUrl(item.product.image)}
                   alt={item.product.title}
                   className="h-24 w-24 rounded-3xl object-cover cursor-zoom-in hover:opacity-85 transition-opacity"
                   onClick={() => {
                     closeCart();
-                    window.dispatchEvent(new CustomEvent('open-image-lightbox', { detail: { imageUrl: item.product.image } }));
+                    window.dispatchEvent(new CustomEvent('open-image-lightbox', { detail: { imageUrl: resolveAssetUrl(item.product.image) } }));
+                  }}
+                  onError={(e) => {
+                    e.currentTarget.src = "https://images.pexels.com/photos/3587620/pexels-photo-3587620.jpeg?w=400&h=400&fit=crop";
                   }}
                 />
                 <div className="flex flex-col justify-between">

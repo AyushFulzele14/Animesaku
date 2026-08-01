@@ -78,7 +78,10 @@ function loadGuestCart(): CartItem[] {
     if (!stored) return [];
     const parsed = JSON.parse(stored) as Array<{ product: Product; quantity: number }>;
     return parsed.map((item) => ({
-      product: item.product,
+      product: {
+        ...item.product,
+        image: resolveAssetUrl(item.product.image),
+      },
       quantity: Number(item.quantity ?? 1),
     }));
   } catch {
