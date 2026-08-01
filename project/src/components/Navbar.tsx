@@ -7,6 +7,7 @@ import { MusicToggle } from './MusicToggle';
 import { OrderHistory } from './OrderHistory';
 import { WishlistModal } from './WishlistModal';
 import { useAuth, useCart } from '../hooks';
+import { api } from '../lib/api';
 import { gsap } from 'gsap';
 import './Navbar.css';
 
@@ -21,7 +22,7 @@ export function Navbar() {
   const { cart, toggleCart } = useCart();
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const [authMode, setAuthMode] = useState<'login' | 'signup' | 'forgot' | 'verify' | 'reset'>('login');
 
   const circleRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const tlRefs = useRef<gsap.core.Timeline[]>([]);
@@ -135,6 +136,13 @@ export function Navbar() {
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
 
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [forgotError, setForgotError] = useState<string | null>(null);
+  const [forgotSuccess, setForgotSuccess] = useState<string | null>(null);
+
   useEffect(() => {
     const syncWishlistCount = () => {
       try {
@@ -153,7 +161,7 @@ export function Navbar() {
     if (user && authModalOpen) setAuthModalOpen(false);
   }, [user, authModalOpen]);
 
-  const openAuthModal = (mode: 'login' | 'signup') => {
+  const openAuthModal = (mode: 'login' | 'signup' | 'forgot' | 'verify' | 'reset') => {
     setAuthMode(mode);
     setAuthModalOpen(true);
     setLoginEmail('');
@@ -161,6 +169,12 @@ export function Navbar() {
     setSignupName('');
     setSignupEmail('');
     setSignupPassword('');
+    setForgotEmail('');
+    setOtpCode('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setForgotError(null);
+    setForgotSuccess(null);
   };
 
   const [authSubmitting, setAuthSubmitting] = useState(false);
@@ -177,7 +191,85 @@ export function Navbar() {
 
   const handleSignup = async (event: FormEvent) => {
     event.preventDefault();
-    await signUp(signupName, signupEmail, signupPassword);
+    setAuthSubmitting(true);
+    try {
+      await signUp(signupName, signupEmail, signupPassword);
+    } finally {
+      setAuthSubmitting(false);
+    }
+  };
+
+  const handleForgotPassword = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!forgotEmail.trim()) {
+      setForgotError('Please enter your email.');
+      return;
+    }
+    setAuthSubmitting(true);
+    setForgotError(null);
+    setForgotSuccess(null);
+    try {
+      await api.post('/auth/forgot-password', { email: forgotEmail.trim() });
+      setForgotSuccess('OTP code sent successfully! Please check your email.');
+      setAuthMode('verify');
+    } catch (err) {
+      setForgotError(err instanceof Error ? err.message : 'Failed to send OTP.');
+    } finally {
+      setAuthSubmitting(false);
+    }
+  };
+
+  const handleVerifyOtp = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!otpCode.trim()) {
+      setForgotError('Please enter the OTP verification code.');
+      return;
+    }
+    setAuthSubmitting(true);
+    setForgotError(null);
+    setForgotSuccess(null);
+    try {
+      await api.post('/auth/verify-otp', { email: forgotEmail.trim(), code: otpCode.trim() });
+      setForgotSuccess('OTP verified successfully. You can now set your new password.');
+      setAuthMode('reset');
+    } catch (err) {
+      setForgotError(err instanceof Error ? err.message : 'Invalid or expired OTP code.');
+    } finally {
+      setAuthSubmitting(false);
+    }
+  };
+
+  const handleResetPassword = async (event: FormEvent) => {
+    event.preventDefault();
+    if (newPassword.length < 6) {
+      setForgotError('New password must be at least 6 characters.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setForgotError('Passwords do not match.');
+      return;
+    }
+    setAuthSubmitting(true);
+    setForgotError(null);
+    setForgotSuccess(null);
+    try {
+      await api.post('/auth/reset-password', {
+        email: forgotEmail.trim(),
+        code: otpCode.trim(),
+        newPassword,
+      });
+      alert('Password reset successfully! Please login with your new password.');
+      setAuthMode('login');
+      // Clear fields
+      setForgotEmail('');
+      setOtpCode('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      setForgotError(err instanceof Error ? err.message : 'Failed to reset password.');
+    } finally {
+      setAuthSubmitting(false);
+    }
   };
 
   return (
@@ -410,7 +502,7 @@ export function Navbar() {
           >
             <div className="flex items-center justify-between px-4 py-3 border-b border-primary-red/20">
               <h3 className="text-lg font-bold text-silver-white">
-                {user ? 'Account' : authMode === 'login' ? 'Login' : 'Sign up'}
+                {user ? 'Account' : authMode === 'login' ? 'Login' : authMode === 'signup' ? 'Sign up' : authMode === 'forgot' ? 'Forgot Password' : authMode === 'verify' ? 'Verify OTP' : 'Reset Password'}
               </h3>
               <button
                 type="button"
@@ -475,28 +567,46 @@ export function Navbar() {
                 </div>
               ) : (
                 <>
-                  <div className="flex gap-2 mb-4">
-                    <button
-                      type="button"
-                      onClick={() => setAuthMode('login')}
-                      className={`flex-1 py-2 rounded-lg font-semibold ${
-                        authMode === 'login' ? 'bg-primary-red text-black' : 'bg-black/40 text-silver-white border border-primary-red/20'
-                      }`}
-                    >
-                      Login
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAuthMode('signup')}
-                      className={`flex-1 py-2 rounded-lg font-semibold ${
-                        authMode === 'signup' ? 'bg-primary-red text-black' : 'bg-black/40 text-silver-white border border-primary-red/20'
-                      }`}
-                    >
-                      Sign up
-                    </button>
-                  </div>
+                  {authMode !== 'login' && authMode !== 'signup' ? (
+                    <div className="flex justify-between items-center mb-4">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAuthMode('login');
+                          setForgotError(null);
+                          setForgotSuccess(null);
+                        }}
+                        className="text-xs text-primary-red font-semibold hover:underline flex items-center gap-1"
+                      >
+                        ← Back to Login
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2 mb-4">
+                      <button
+                        type="button"
+                        onClick={() => setAuthMode('login')}
+                        className={`flex-1 py-2 rounded-lg font-semibold ${
+                          authMode === 'login' ? 'bg-primary-red text-black' : 'bg-black/40 text-silver-white border border-primary-red/20'
+                        }`}
+                      >
+                        Login
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAuthMode('signup')}
+                        className={`flex-1 py-2 rounded-lg font-semibold ${
+                          authMode === 'signup' ? 'bg-primary-red text-black' : 'bg-black/40 text-silver-white border border-primary-red/20'
+                        }`}
+                      >
+                        Sign up
+                      </button>
+                    </div>
+                  )}
 
-                  {authError && <p className="text-primary-red mb-3">{authError}</p>}
+                  {authError && <p className="text-primary-red mb-3 text-xs">{authError}</p>}
+                  {forgotError && <p className="text-primary-red mb-3 text-xs">{forgotError}</p>}
+                  {forgotSuccess && <p className="text-green-500 mb-3 text-xs">{forgotSuccess}</p>}
 
                   {authMode === 'login' ? (
                     <form onSubmit={handleLogin} className="space-y-3">
@@ -504,7 +614,9 @@ export function Navbar() {
                         value={loginEmail}
                         onChange={(e) => setLoginEmail(e.target.value)}
                         placeholder="Email"
+                        type="email"
                         className="input"
+                        required
                       />
                       <input
                         value={loginPassword}
@@ -512,7 +624,22 @@ export function Navbar() {
                         type="password"
                         placeholder="Password"
                         className="input"
+                        required
                       />
+                      <div className="text-right">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAuthMode('forgot');
+                            setForgotEmail(loginEmail);
+                            setForgotError(null);
+                            setForgotSuccess(null);
+                          }}
+                          className="text-xs text-primary-red/80 hover:text-primary-red hover:underline"
+                        >
+                          Forgot Password?
+                        </button>
+                      </div>
                       <button
                         type="submit"
                         disabled={authSubmitting}
@@ -521,19 +648,22 @@ export function Navbar() {
                         {authSubmitting ? 'Logging in...' : 'Login'}
                       </button>
                     </form>
-                  ) : (
+                  ) : authMode === 'signup' ? (
                     <form onSubmit={handleSignup} className="space-y-3">
                       <input
                         value={signupName}
                         onChange={(e) => setSignupName(e.target.value)}
                         placeholder="Name"
                         className="input"
+                        required
                       />
                       <input
                         value={signupEmail}
                         onChange={(e) => setSignupEmail(e.target.value)}
                         placeholder="Email"
+                        type="email"
                         className="input"
+                        required
                       />
                       <input
                         value={signupPassword}
@@ -541,10 +671,89 @@ export function Navbar() {
                         type="password"
                         placeholder="Password"
                         className="input"
+                        required
                       />
 
-                      <button type="submit" className="w-full bg-primary-red text-black rounded-lg px-4 py-2 font-semibold hover:opacity-95 transition-opacity">
-                        Create account
+                      <button
+                        type="submit"
+                        disabled={authSubmitting}
+                        className="w-full bg-primary-red text-black rounded-lg px-4 py-2 font-semibold hover:opacity-95 transition-opacity disabled:opacity-60"
+                      >
+                        {authSubmitting ? 'Creating...' : 'Create account'}
+                      </button>
+                    </form>
+                  ) : authMode === 'forgot' ? (
+                    <form onSubmit={handleForgotPassword} className="space-y-3">
+                      <p className="text-xs text-silver-white/70 text-left">
+                        Enter your registered email address below. We will send you a 6-digit verification code to reset your password.
+                      </p>
+                      <input
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                        placeholder="Email Address"
+                        type="email"
+                        className="input"
+                        required
+                      />
+                      <button
+                        type="submit"
+                        disabled={authSubmitting}
+                        className="w-full bg-primary-red text-black rounded-lg px-4 py-2 font-semibold hover:opacity-95 transition-opacity disabled:opacity-60"
+                      >
+                        {authSubmitting ? 'Sending OTP...' : 'Send OTP'}
+                      </button>
+                    </form>
+                  ) : authMode === 'verify' ? (
+                    <form onSubmit={handleVerifyOtp} className="space-y-3">
+                      <p className="text-xs text-silver-white/70 text-left font-semibold">
+                        Verification code sent to {forgotEmail}.
+                      </p>
+                      <p className="text-xs text-silver-white/70 text-left font-medium">
+                        Please enter the 6-digit OTP code below:
+                      </p>
+                      <input
+                        value={otpCode}
+                        onChange={(e) => setOtpCode(e.target.value)}
+                        placeholder="6-Digit OTP Code"
+                        maxLength={6}
+                        className="input text-center font-bold tracking-widest text-lg"
+                        required
+                      />
+                      <button
+                        type="submit"
+                        disabled={authSubmitting}
+                        className="w-full bg-primary-red text-black rounded-lg px-4 py-2 font-semibold hover:opacity-95 transition-opacity disabled:opacity-60"
+                      >
+                        {authSubmitting ? 'Verifying...' : 'Verify OTP'}
+                      </button>
+                    </form>
+                  ) : (
+                    <form onSubmit={handleResetPassword} className="space-y-3">
+                      <p className="text-xs text-silver-white/70 text-left">
+                        Set a secure new password for your account:
+                      </p>
+                      <input
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        type="password"
+                        placeholder="New Password"
+                        className="input"
+                        required
+                      />
+                      <input
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        type="password"
+                        placeholder="Confirm Password"
+                        className="input"
+                        required
+                      />
+                      <button
+                        type="submit"
+                        disabled={authSubmitting}
+                        className="w-full bg-primary-red text-black rounded-lg px-4 py-2 font-semibold hover:opacity-95 transition-opacity disabled:opacity-60"
+                      >
+                        {authSubmitting ? 'Resetting...' : 'Reset Password'}
                       </button>
                     </form>
                   )}
