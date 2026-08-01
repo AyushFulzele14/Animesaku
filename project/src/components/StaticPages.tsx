@@ -303,6 +303,27 @@ export function ContactPage() {
                 </p>
               </div>
             </motion.a>
+
+            {/* WhatsApp Card */}
+            <motion.a 
+              href="https://wa.me/919359320860"
+              target="_blank"
+              rel="noreferrer"
+              whileHover={{ x: 6, borderColor: 'rgba(34, 197, 94, 0.4)' }}
+              className="flex items-center gap-4 bg-black/60 border border-primary-red/10 rounded-2xl p-4 transition-all duration-300"
+            >
+              <div className="w-12 h-12 bg-primary-red/10 border border-primary-red/20 rounded-xl flex items-center justify-center text-primary-red">
+                <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                  <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.717-1.458L0 24zm6.208-3.816l.41.243c1.558.924 3.42 1.412 5.334 1.413 5.485 0 9.948-4.463 9.952-9.953.002-2.66-1.033-5.161-2.913-7.043C17.168 3.02 14.67 1.986 12.01 1.986c-5.49 0-9.955 4.463-9.96 9.953-.002 1.83.479 3.619 1.393 5.198l.255.441L2.704 21.03l3.561-1.306zm13.149-10.222c-.3-.15-1.77-.874-2.046-.975-.276-.102-.477-.152-.676.15-.199.3-.772.976-.947 1.176-.174.201-.35.226-.65.076-.3-.15-1.267-.467-2.414-1.49-1.066-.951-1.802-2.124-2.011-2.424-.21-.3-.022-.462.128-.611.135-.135.3-.349.45-.524.15-.175.2-.299.3-.5.1-.2.05-.375-.025-.525-.075-.15-.676-1.629-.926-2.229-.244-.587-.492-.507-.676-.516-.175-.008-.375-.01-.576-.01-.2 0-.526.075-.801.375-.276.3-1.053 1.026-1.053 2.502 0 1.477 1.077 2.9 1.226 3.1.15.2 2.119 3.235 5.132 4.536.716.31 1.275.495 1.71.634.72.228 1.375.196 1.893.118.577-.087 1.77-.724 2.02-1.388.251-.664.251-1.233.175-1.353-.075-.12-.275-.195-.575-.345z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-xs text-silver-white/40 font-semibold uppercase tracking-wider">WhatsApp Support</p>
+                <p className="text-sm font-bold text-silver-white hover:text-green-500 transition-colors">
+                  +91 93593 20860
+                </p>
+              </div>
+            </motion.a>
           </div>
 
           <div className="text-xs text-silver-white/30 font-semibold tracking-wider uppercase">

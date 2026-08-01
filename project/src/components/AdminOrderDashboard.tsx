@@ -18,7 +18,14 @@ interface AdminOrder {
   orderStatus: 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled' | 'Returned';
   paymentInfo: { method: string; status: string };
   totals: { grandTotal: number };
-  shippingAddress: { street: string; city: string };
+  shippingAddress: { 
+    street: string; 
+    city: string;
+    state?: string;
+    zipCode?: string;
+    country?: string;
+    phoneNumber?: string;
+  };
   createdAt: string;
   trackingNumber?: string;
   returnRequest?: {
@@ -234,6 +241,7 @@ export function AdminOrderDashboard() {
                       <h4 className="font-semibold text-silver-white mb-2">Customer</h4>
                       <p className="text-silver-white">{order.user?.name || 'Deleted User'}</p>
                       <p className="text-silver-white/60 text-sm">{order.user?.email || 'N/A'}</p>
+                      <p className="text-silver-white/60 text-sm">Phone: {order.shippingAddress.phoneNumber || 'N/A'}</p>
                     </div>
 
                     {/* Items */}

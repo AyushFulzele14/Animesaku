@@ -155,6 +155,11 @@ export function OrderConfirmation({ orderId, orderData, onDone }: ConfirmationPr
                 </svg>
                 Share Receipt on WhatsApp
               </a>
+
+              <div className="text-xs text-silver-white/80 mt-2 space-y-1 text-center border-t border-primary-red/10 pt-3 w-full">
+                <p>Share your payment screenshot to this WhatsApp number for confirmation:</p>
+                <p className="text-primary-red font-bold text-sm mt-1">+91 93593 20860</p>
+              </div>
             </motion.div>
           )}
 
