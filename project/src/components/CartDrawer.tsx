@@ -121,6 +121,9 @@ export function CartDrawer() {
           ? 'Order placed successfully! Thank you for shopping with us.' 
           : 'Order placed successfully! Please complete your UPI payment.'
         );
+        if (paymentMethod === 'UPI') {
+          alert('Order Placed Successfully!\n\nPlease complete your UPI payment on the next screen.');
+        }
         setOrderConfirmed({
           orderId: response.orderId || response._id || '',
           data: response as ConfirmationProps['orderData'],
