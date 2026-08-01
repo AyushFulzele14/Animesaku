@@ -12,14 +12,7 @@ declare global {
   }
 }
 
-type RazorpayPayload = {
-  orderId: string;
-  razorpayOrderId: string;
-  amount: number;
-  currency: string;
-  key: string;
-  isMock: boolean;
-};
+
 
 export function CartDrawer() {
   const { cart, total, isCartOpen, closeCart, removeFromCart, updateQuantity, clearCart } = useCart();
@@ -30,8 +23,7 @@ export function CartDrawer() {
   const [zipCode, setZipCode] = useState('');
   const [country, setCountry] = useState('India');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'COD' | 'Razorpay'>('COD');
-  const [paymentPayload, setPaymentPayload] = useState<RazorpayPayload | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<'COD' | 'UPI'>('COD');
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutMessage, setCheckoutMessage] = useState<string | null>(null);
   const [orderConfirmed, setOrderConfirmed] = useState<{ orderId: string; data: ConfirmationProps['orderData'] } | null>(null);
@@ -80,106 +72,7 @@ export function CartDrawer() {
   const discountAmount = appliedCoupon ? appliedCoupon.discountAmount : 0;
   const grandTotal = total + shippingCharge - discountAmount;
 
-  const loadRazorpayScript = async (): Promise<boolean> => {
-    if (window.Razorpay) {
-      return true;
-    }
 
-    return new Promise((resolve) => {
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.async = true;
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
-  };
-
-  const verifyRazorpayPayment = async (
-    payload: {
-      orderId: string;
-      razorpayOrderId: string;
-      razorpayPaymentId: string;
-      razorpaySignature: string;
-    },
-    orderData?: ConfirmationProps['orderData']
-  ) => {
-    await api.post('/orders/verify-payment', payload);
-    clearCart();
-    setCheckoutMessage('Payment verified and order confirmed successfully!');
-    setOrderConfirmed({
-      orderId: payload.orderId,
-      data: orderData || {
-        items: [],
-        totals: { grandTotal: 0 },
-        paymentInfo: { method: 'Razorpay' }
-      }
-    });
-  };
-
-  const openRazorpayCheckout = async (payload: RazorpayPayload, orderData: ConfirmationProps['orderData']) => {
-    if (payload.isMock) {
-      await verifyRazorpayPayment({
-        orderId: payload.orderId,
-        razorpayOrderId: payload.razorpayOrderId,
-        razorpayPaymentId: 'mock_payment_id',
-        razorpaySignature: 'mock_signature',
-      }, orderData);
-      return;
-    }
-
-    const loaded = await loadRazorpayScript();
-    if (!loaded || !window.Razorpay) {
-      throw new Error('Unable to load Razorpay checkout. Please try again.');
-    }
-
-    const checkoutOptions = {
-      key: payload.key,
-      amount: payload.amount,
-      currency: payload.currency,
-      name: 'Animysaku Store',
-      description: 'Anime merchandise order',
-      order_id: payload.razorpayOrderId,
-      prefill: {
-        name: user?.name || '',
-        email: user?.email || '',
-        contact: phoneNumber,
-      },
-      notes: {
-        orderId: payload.orderId,
-      },
-      theme: {
-        color: '#ee1010',
-      },
-      handler: async (razorpayResponse: {
-        razorpay_payment_id: string;
-        razorpay_order_id: string;
-        razorpay_signature: string;
-      }) => {
-        setCheckoutLoading(true);
-        try {
-          await verifyRazorpayPayment({
-            orderId: payload.orderId,
-            razorpayOrderId: razorpayResponse.razorpay_order_id,
-            razorpayPaymentId: razorpayResponse.razorpay_payment_id,
-            razorpaySignature: razorpayResponse.razorpay_signature,
-          }, orderData);
-        } catch (error) {
-          setCheckoutMessage(error instanceof Error ? error.message : 'Payment verification failed.');
-        } finally {
-          setCheckoutLoading(false);
-        }
-      },
-      modal: {
-        ondismiss: () => {
-          setCheckoutMessage('Razorpay checkout closed. You can retry payment.');
-        },
-      },
-    };
-
-    const razorpay = new window.Razorpay(checkoutOptions);
-    razorpay.open();
-  };
 
   const handleCheckout = async () => {
     if (!user) {
@@ -194,7 +87,6 @@ export function CartDrawer() {
 
     setCheckoutLoading(true);
     setCheckoutMessage(null);
-    setPaymentPayload(null);
 
     try {
       interface CheckoutResponse {
@@ -223,25 +115,16 @@ export function CartDrawer() {
         couponCode: appliedCoupon?.code || undefined,
       });
 
-      if (paymentMethod === 'COD') {
+      if (paymentMethod === 'COD' || paymentMethod === 'UPI') {
         clearCart();
-        setCheckoutMessage('Order placed successfully! Thank you for shopping with us.');
+        setCheckoutMessage(paymentMethod === 'COD' 
+          ? 'Order placed successfully! Thank you for shopping with us.' 
+          : 'Order placed successfully! Please complete your UPI payment.'
+        );
         setOrderConfirmed({
           orderId: response.orderId || response._id || '',
           data: response as ConfirmationProps['orderData'],
         });
-      } else if (paymentMethod === 'Razorpay') {
-        const payload: RazorpayPayload = {
-          orderId: response.orderId || response._id || '',
-          razorpayOrderId: response.razorpayOrderId || '',
-          amount: response.amount || 0,
-          currency: response.currency || 'INR',
-          key: response.key || '',
-          isMock: !!response.isMock,
-        };
-        setPaymentPayload(payload);
-        setCheckoutMessage('Razorpay transaction initialized — opening checkout.');
-        await openRazorpayCheckout(payload, response as ConfirmationProps['orderData']);
       }
     } catch (error) {
       setCheckoutMessage(error instanceof Error ? error.message : 'Failed to place order.');
@@ -398,7 +281,7 @@ export function CartDrawer() {
             <div className="rounded-3xl border border-primary-red/20 bg-black/70 p-4">
               <h3 className="text-lg font-semibold text-silver-white mb-3">Payment method</h3>
               <div className="space-y-2">
-                {(['COD', 'Razorpay'] as const).map((method) => (
+               {(['COD', 'UPI'] as const).map((method) => (
                   <label
                     key={method}
                     className="flex items-center gap-3 rounded-2xl border border-primary-red/20 px-4 py-3 cursor-pointer transition-colors duration-200 hover:border-primary-red"
@@ -412,19 +295,19 @@ export function CartDrawer() {
                       className="accent-primary-red"
                     />
                     <div>
-                      <div className="font-semibold text-silver-white">{method === 'COD' ? 'Cash on Delivery' : 'Razorpay'}</div>
+                      <div className="font-semibold text-silver-white">{method === 'COD' ? 'Cash on Delivery' : 'UPI / QR Code'}</div>
                       <div className="text-silver-white/60 text-sm">
                         {method === 'COD'
                           ? 'Pay when your order arrives.'
-                          : 'Prepay securely using Razorpay.'}
+                          : 'Prepay using UPI ID / QR code.'}
                       </div>
                     </div>
                   </label>
                 ))}
               </div>
-              {paymentMethod === 'Razorpay' && (
+              {paymentMethod === 'UPI' && (
                 <p className="mt-3 text-sm text-silver-white/70">
-                  After you submit, the backend will initialize a Razorpay transaction order. You must complete payment to finalize the order.
+                  After you submit, you will be shown our UPI QR code and payment details to complete your order.
                 </p>
               )}
             </div>
@@ -479,18 +362,7 @@ export function CartDrawer() {
               </div>
             )}
 
-            {paymentPayload && (
-              <div className="rounded-3xl border border-primary-red/20 bg-black/70 p-4">
-                <h4 className="font-semibold text-silver-white mb-2">Razorpay transaction details</h4>
-                <div className="text-sm text-silver-white/70 space-y-1">
-                  <p>Order ID: {paymentPayload.orderId}</p>
-                  <p>Razorpay Order ID: {paymentPayload.razorpayOrderId}</p>
-                  <p>Amount: {formatINR(paymentPayload.amount / 100)}</p>
-                  <p>Currency: {paymentPayload.currency}</p>
-                  <p>Mode: {paymentPayload.isMock ? 'Mock / fallback' : 'Live'}</p>
-                </div>
-              </div>
-            )}
+
 
             <div className="rounded-3xl border border-primary-red/20 bg-black/70 p-4 space-y-3">
               <div className="flex items-center justify-between text-silver-white/80 text-sm">
@@ -518,7 +390,7 @@ export function CartDrawer() {
                 className="w-full bg-primary-red text-black py-3 rounded-3xl font-semibold hover:bg-red-600 transition-colors duration-200 disabled:opacity-60"
                 disabled={cart.length === 0 || checkoutLoading}
               >
-                {checkoutLoading ? 'Processing...' : `Checkout (${paymentMethod === 'COD' ? 'Cash on Delivery' : 'Razorpay'})`}
+                 {checkoutLoading ? 'Processing...' : `Checkout (${paymentMethod === 'COD' ? 'Cash on Delivery' : 'UPI / QR Code'})`}
               </button>
             </div>
           </form>

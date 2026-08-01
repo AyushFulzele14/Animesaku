@@ -182,7 +182,7 @@
                       "phoneNumber": { "type": "string" }
                     }
                   },
-                  "paymentMethod": { "type": "string", "enum": ["COD", "Razorpay"] },
+                  "paymentMethod": { "type": "string", "enum": ["COD", "Razorpay", "UPI"] },
                   "couponCode": { "type": "string" }
                 }
               }

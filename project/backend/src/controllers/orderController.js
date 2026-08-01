@@ -118,7 +118,48 @@ export const createOrder = asyncHandler(async (req, res) => {
     return res.status(201).json(new ApiResponse(201, order, 'Order placed successfully (Cash on Delivery)'));
   }
 
-  // 2. Pre-Paid Razorpay Checkout logic
+  // 2. UPI Payment Checkout logic
+  if (paymentMethod === 'UPI') {
+    // Lock inventory stock immediately
+    for (const item of cart.items) {
+      await Product.findByIdAndUpdate(item.product._id, {
+        $inc: { stockQuantity: -item.quantity },
+      });
+    }
+
+    const order = await Order.create({
+      user: userId,
+      items: orderItems,
+      shippingAddress,
+      paymentInfo: {
+        method: 'UPI',
+        status: 'Pending',
+      },
+      totals: {
+        subtotal,
+        shipping,
+        couponDiscount: discount,
+        grandTotal,
+      },
+      couponUsed,
+      orderStatus: 'Processing',
+    });
+
+    // Clear user shopping cart
+    cart.items = [];
+    await cart.save();
+
+    // Send order confirmation email (non-blocking)
+    try {
+      await sendOrderConfirmationEmail(req.user, order);
+    } catch (emailError) {
+      console.error('Error sending order confirmation email:', emailError.message);
+    }
+
+    return res.status(201).json(new ApiResponse(201, order, 'Order placed successfully (UPI Payment)'));
+  }
+
+  // 3. Pre-Paid Razorpay Checkout logic
   if (paymentMethod === 'Razorpay') {
     // Create Razorpay Order
     const receiptId = `rcpt_${Date.now()}`;

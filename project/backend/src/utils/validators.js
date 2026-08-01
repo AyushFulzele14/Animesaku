@@ -89,7 +89,7 @@ export const orderSchema = z.object({
     country: z.string().trim().default('India'),
     phoneNumber: z.string().trim().min(10, 'Phone number must be at least 10 digits'),
   }),
-  paymentMethod: z.enum(['COD', 'Razorpay']),
+  paymentMethod: z.enum(['COD', 'Razorpay', 'UPI']),
   couponCode: z.string().trim().toUpperCase().optional(),
 });
 
