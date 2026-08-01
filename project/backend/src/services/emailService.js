@@ -5,6 +5,7 @@ import { logger } from '../config/logger.js';
  * Send Order Confirmation Email
  */
 export const sendOrderConfirmationEmail = async (user, order) => {
+  return true; // Disabled by user request
   try {
     const itemsHTML = order.items
       .map(
@@ -91,6 +92,7 @@ export const sendOrderConfirmationEmail = async (user, order) => {
  * Send Shipping Notification Email
  */
 export const sendShippingNotificationEmail = async (user, order, trackingNumber) => {
+  return true; // Disabled by user request
   try {
     const html = `
       <html>
@@ -143,6 +145,7 @@ export const sendShippingNotificationEmail = async (user, order, trackingNumber)
  * Send Delivery Confirmation Email
  */
 export const sendDeliveryConfirmationEmail = async (user, order) => {
+  return true; // Disabled by user request
   try {
     const html = `
       <html>

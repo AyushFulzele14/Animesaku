@@ -171,6 +171,7 @@ export const sendWelcomeEmail = async (email, name) => {
  * Send Security Alert / Login Notification Email
  */
 export const sendLoginNotificationEmail = async (email, name, ip, userAgent) => {
+  return true; // Disabled by user request
   const subject = 'Security Alert: New Login - AnimySaku Store';
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ee1010; border-radius: 10px; background-color: #1a1a18; color: #c9c9c9;">
