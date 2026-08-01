@@ -17,7 +17,7 @@ export function OrderConfirmation({ orderId, orderData, onDone }: ConfirmationPr
   const [copied, setCopied] = useState(false);
 
   const handleCopyUpi = () => {
-    const upi = import.meta.env.VITE_UPI_ID || 'ayushfulzele19@okaxis';
+    const upi = import.meta.env.VITE_UPI_ID || 'gmbaldurgaming@okicici';
     void navigator.clipboard.writeText(upi);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -27,12 +27,10 @@ export function OrderConfirmation({ orderId, orderData, onDone }: ConfirmationPr
     setShowAnimation(true);
   }, []);
 
-  const upiId = import.meta.env.VITE_UPI_ID || 'ayushfulzele19@okaxis';
-  const whatsappNum = import.meta.env.VITE_WHATSAPP_NUMBER || '919175402094';
+  const upiId = import.meta.env.VITE_UPI_ID || 'gmbaldurgaming@okicici';
+  const whatsappNum = import.meta.env.VITE_WHATSAPP_NUMBER || '919359320860';
   const amount = orderData?.totals.grandTotal || 0;
   
-  const upiUrl = `upi://pay?pa=${upiId}&pn=Animysaku%20Store&am=${amount}&cu=INR`;
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiUrl)}`;
   const whatsappText = `Hi! I have placed an order on AnimySaku Store. Here are my payment details:\n\nOrder ID: ${orderId}\nAmount: ₹${amount.toFixed(2)}`;
   const whatsappUrl = `https://wa.me/${whatsappNum}?text=${encodeURIComponent(whatsappText)}`;
 
@@ -125,7 +123,7 @@ export function OrderConfirmation({ orderId, orderData, onDone }: ConfirmationPr
               
               <div className="bg-white p-2 rounded-2xl border border-primary-red/20 shadow-neon-red">
                 <img
-                  src={qrCodeUrl}
+                  src="/qr-code.jpg"
                   alt="UPI QR Code"
                   className="w-44 h-44 object-contain"
                 />
