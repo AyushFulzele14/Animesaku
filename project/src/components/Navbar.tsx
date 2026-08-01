@@ -3,7 +3,6 @@ import { ShoppingCart, Heart, User, Menu, X, Package } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Logo } from './Logo';
 import { LiveSearch } from './LiveSearch';
-import { ThemeToggle } from './ThemeToggle';
 import { MusicToggle } from './MusicToggle';
 import { OrderHistory } from './OrderHistory';
 import { WishlistModal } from './WishlistModal';
@@ -235,7 +234,6 @@ export function Navbar() {
             </motion.button>
 
             <MusicToggle />
-            <ThemeToggle />
 
             <motion.button
               whileHover={{ scale: 1.1 }}
@@ -339,7 +337,6 @@ export function Navbar() {
                 </svg>
               </motion.button>
               <MusicToggle />
-              <ThemeToggle />
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 onClick={() => { setWishlistOpen(true); setIsOpen(false); }}
