@@ -36,7 +36,14 @@ const getTransporter = () => {
 export const sendEmail = async ({ to, subject, html, text }) => {
   const host = process.env.SMTP_HOST;
   const apiKey = process.env.SMTP_PASS;
-  const senderEmail = process.env.SMTP_USER;
+
+  // Extract email address from SMTP_FROM (e.g. "Name" <email@domain.com>) if present
+  let senderEmail = process.env.SMTP_USER;
+  const fromEnv = process.env.SMTP_FROM;
+  if (fromEnv) {
+    const match = fromEnv.match(/<([^>]+)>/);
+    senderEmail = match ? match[1] : fromEnv;
+  }
 
   // If using Brevo, send via HTTPS API to bypass Render's outbound port restrictions!
   if (host === 'smtp-relay.brevo.com' && apiKey && (apiKey.startsWith('xsmtpsib-') || apiKey.startsWith('xkeysib-'))) {
