@@ -27,7 +27,7 @@ import {
   Galaxy,
 } from './components';
 
-type ShopCategory = 'All' | 'Posters' | 'Stickers';
+type ShopCategory = string;
 
 function AppContent() {
   const { isAdmin } = useAuth();

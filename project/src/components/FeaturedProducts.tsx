@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { ProductCard } from './ProductCard';
 import { useProducts } from '../hooks';
 import { useCart } from '../hooks';
+import { api } from '../lib/api';
 
-type ShopCategory = 'All' | 'Posters' | 'Stickers';
+type ShopCategory = string;
 
 interface FeaturedProductsProps {
   forcedCategory?: ShopCategory;
@@ -14,22 +15,38 @@ export function FeaturedProducts({ forcedCategory = 'All' }: FeaturedProductsPro
   const { products, loading, error } = useProducts();
   const { addToCart } = useCart();
   const [activeCategory, setActiveCategory] = useState<ShopCategory>(forcedCategory);
+  const [dbCategories, setDbCategories] = useState<string[]>([]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const list = await api.get<{ _id: string; name: string }[]>('/categories');
+        setDbCategories(list.map(c => c.name));
+      } catch {
+        // Handled via fallback in useMemo
+      }
+    };
+    load();
+  }, []);
 
   useEffect(() => {
     setActiveCategory(forcedCategory);
   }, [forcedCategory]);
 
-  const categories: Array<ShopCategory> = ['All', 'Posters', 'Stickers'];
+  const categories = useMemo(() => {
+    if (dbCategories.length > 0) {
+      return ['All', ...dbCategories];
+    }
+    const unique = Array.from(new Set(products.map((p) => p.category).filter(Boolean)));
+    return ['All', ...unique];
+  }, [dbCategories, products]);
 
   const selectedCategory: ShopCategory = activeCategory;
 
   const filteredProducts =
     selectedCategory === 'All'
       ? products
-      : products.filter((product) => {
-          const normalized = product.type === 'poster' ? 'Posters' : 'Stickers';
-          return normalized === selectedCategory;
-        });
+      : products.filter((product) => product.category === selectedCategory);
 
   return (
     <section id="shop" className="relative py-20 px-4 sm:px-6 lg:px-8 overflow-hidden">

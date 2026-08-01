@@ -1,24 +1,40 @@
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import * as Icons from 'lucide-react';
-import { themeConfig } from '../config/theme';
+import { api } from '../lib/api';
 
-type ShopCategory = 'All' | 'Posters' | 'Stickers';
+type ShopCategory = string;
 
 interface CollectionsProps {
   onSelectCategory?: (category: ShopCategory) => void;
 }
 
-const mapCollectionToCategory = (name: string): ShopCategory => {
-  const normalized = name.toLowerCase();
-  if (normalized.includes('poster')) return 'Posters';
-  if (normalized.includes('sticker')) return 'Stickers';
-  return 'All';
-};
+interface Category {
+  _id: string;
+  name: string;
+}
 
 export function Collections({ onSelectCategory }: CollectionsProps) {
-  const handleSelect = (collectionName: string) => {
-    const category = mapCollectionToCategory(collectionName);
-    onSelectCategory?.(category);
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const list = await api.get<Category[]>('/categories');
+        setCategories(list);
+      } catch {
+        // Fallback static categories if offline/failed
+        setCategories([
+          { _id: 'posters', name: 'Anime Posters' },
+          { _id: 'stickers', name: 'Anime Stickers' },
+        ]);
+      }
+    };
+    load();
+  }, []);
+
+  const handleSelect = (categoryName: string) => {
+    onSelectCategory?.(categoryName);
 
     const shopSection = document.getElementById('shop');
     if (shopSection) {
@@ -26,9 +42,29 @@ export function Collections({ onSelectCategory }: CollectionsProps) {
     }
   };
 
+  const getCategoryDetails = (name: string) => {
+    const normalized = name.toLowerCase();
+    if (normalized.includes('poster')) {
+      return {
+        icon: 'Image',
+        bg: '/anime-posters.png',
+      };
+    }
+    if (normalized.includes('sticker')) {
+      return {
+        icon: 'Smile',
+        bg: '/anime-stickers.png',
+      };
+    }
+    // Fallback details for custom category collections
+    return {
+      icon: 'Package',
+      bg: '/anime-posters.png',
+    };
+  };
+
   return (
     <section id="collections" className="relative py-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
-
       <div className="max-w-7xl mx-auto relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -46,12 +82,13 @@ export function Collections({ onSelectCategory }: CollectionsProps) {
         </motion.div>
 
         <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-2 gap-4">
-          {themeConfig.sections.collections.map((collection, index) => {
-            const IconComponent = Icons[collection.icon as keyof typeof Icons] as React.ComponentType<{ className?: string }>;
+          {categories.map((cat, index) => {
+            const details = getCategoryDetails(cat.name);
+            const IconComponent = Icons[details.icon as keyof typeof Icons] as React.ComponentType<{ className?: string }>;
 
             return (
               <motion.button
-                key={collection.id}
+                key={cat._id}
                 initial={{ opacity: 0, scale: 0.8 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
@@ -61,7 +98,7 @@ export function Collections({ onSelectCategory }: CollectionsProps) {
                   boxShadow: '0 0 30px rgba(238, 16, 16, 0.6)',
                 }}
                 type="button"
-                onClick={() => handleSelect(collection.name)}
+                onClick={() => handleSelect(cat.name)}
                 className="group relative rounded-lg overflow-hidden"
               >
                 <div className="aspect-[4/3] md:aspect-[16/9] lg:aspect-[2/1] rounded-lg border border-primary-red/30 group-hover:border-primary-red/60 transition-all duration-300 flex flex-col items-center justify-center p-6 cursor-pointer overflow-hidden relative w-full h-full">
@@ -69,11 +106,7 @@ export function Collections({ onSelectCategory }: CollectionsProps) {
                   <div
                     className="absolute inset-0 transition-transform duration-700 ease-out group-hover:scale-110 z-0"
                     style={{
-                      backgroundImage: `url(${
-                        collection.name === 'Anime Posters'
-                          ? '/anime-posters.png'
-                          : '/anime-stickers.png'
-                      })`,
+                      backgroundImage: `url(${details.bg})`,
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
                     }}
@@ -94,7 +127,7 @@ export function Collections({ onSelectCategory }: CollectionsProps) {
                   </motion.div>
 
                   <h3 className="text-center text-sm md:text-base font-black uppercase tracking-wider text-silver-white group-hover:text-primary-red transition-colors duration-300 relative z-20 text-shadow-glow">
-                    {collection.name}
+                    {cat.name}
                   </h3>
 
                   <motion.div
