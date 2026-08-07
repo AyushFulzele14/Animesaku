@@ -5,13 +5,10 @@ class ApiFeatures {
   }
 
   search() {
-    const keyword = this.queryString.keyword
+    const searchVal = this.queryString.keyword || this.queryString.search;
+    const keyword = searchVal
       ? {
-          $or: [
-            { title: { $regex: this.queryString.keyword, $options: "i" } },
-            { animeName: { $regex: this.queryString.keyword, $options: "i" } },
-            { tags: { $regex: this.queryString.keyword, $options: "i" } },
-          ],
+          title: { $regex: searchVal, $options: "i" },
         }
       : {};
     this.query = this.query.find({ ...keyword });

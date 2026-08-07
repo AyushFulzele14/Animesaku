@@ -39,9 +39,11 @@ export const getAllProducts = asyncHandler(async (req, res) => {
 
   const query = {};
 
-  // Text search on Title, Description, animeName, and tags
-  if (search) {
-    query.$text = { $search: search };
+  const searchVal = search || req.query.keyword;
+
+  // Search only by Title of the product
+  if (searchVal) {
+    query.title = { $regex: searchVal, $options: 'i' };
   }
 
   // Exact Match filters
@@ -92,14 +94,7 @@ export const getAllProducts = asyncHandler(async (req, res) => {
     .skip(skip)
     .limit(Number(limit));
 
-  // If text search, sort by text score by default if no explicit sort is passed
-  if (search && sort === '-createdAt') {
-    productsQuery = Product.find(query, { score: { $meta: 'textScore' } })
-      .populate('category', 'name slug')
-      .sort({ score: { $meta: 'textScore' } })
-      .skip(skip)
-      .limit(Number(limit));
-  }
+  // Search is now matched by title regex, so we do not sort by textScore.
 
   const products = await productsQuery;
   const total = await Product.countDocuments(query);
