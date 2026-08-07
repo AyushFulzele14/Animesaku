@@ -30,6 +30,7 @@ interface ProductDetails {
   dimensions?: string;
   materialQuality?: string;
   sizes?: string[];
+  finishType?: "matte" | "glossy" | "both";
   reviews: Review[];
 }
 
@@ -78,6 +79,21 @@ export function ProductDetailModal({ productId, onClose }: ProductDetailModalPro
     }
   }, [productId, fetchDetails]);
 
+  useEffect(() => {
+    if (details) {
+      if (details.finishType === "glossy") {
+        setSelectedFinish("glossy");
+      } else {
+        setSelectedFinish("matte");
+      }
+      if (details.sizes && details.sizes.length > 0) {
+        if (!details.sizes.includes(selectedSize)) {
+          setSelectedSize(details.sizes[0] as any);
+        }
+      }
+    }
+  }, [details]);
+
   const handleReviewSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!productId || !newComment.trim()) return;
@@ -115,6 +131,7 @@ export function ProductDetailModal({ productId, onClose }: ProductDetailModalPro
       rating: details.ratings,
       reviews: details.numOfReviews,
       description: details.description,
+      finishType: details.finishType || 'matte',
     };
     void addToCart(prod, selectedFinish, selectedSize);
   };
@@ -309,8 +326,16 @@ export function ProductDetailModal({ productId, onClose }: ProductDetailModalPro
                           onChange={(e) => setSelectedFinish(e.target.value as any)}
                           className="bg-matte-black border border-primary-red/30 rounded-xl px-3 py-2 text-sm text-silver-white focus:outline-none focus:border-primary-red"
                         >
-                          <option value="matte">Matte</option>
-                          <option value="glossy">Glossy</option>
+                          {details.finishType === "both" ? (
+                            <>
+                              <option value="matte">Matte</option>
+                              <option value="glossy">Glossy</option>
+                            </>
+                          ) : details.finishType === "glossy" ? (
+                            <option value="glossy">Glossy</option>
+                          ) : (
+                            <option value="matte">Matte</option>
+                          )}
                         </select>
                       </div>
                     </div>

@@ -22,6 +22,7 @@ export function AdminProductManager() {
   const [discountPrice, setDiscountPrice] = useState("");
   const [stockQuantity, setStockQuantity] = useState("");
   const [type, setType] = useState<"poster" | "sticker">("poster");
+  const [finishType, setFinishType] = useState<"matte" | "glossy" | "both">("matte");
   const [dimensions, setDimensions] = useState("");
   const [materialQuality, setMaterialQuality] = useState("");
   const [tags, setTags] = useState("");
@@ -129,6 +130,7 @@ export function AdminProductManager() {
       formData.append("discountPrice", discountPrice || "0");
       formData.append("stockQuantity", stockQuantity);
       formData.append("type", type);
+      formData.append("finishType", finishType);
       formData.append("dimensions", dimensions);
       formData.append("materialQuality", materialQuality);
       formData.append("featured", String(featured));
@@ -160,6 +162,7 @@ export function AdminProductManager() {
       setFeatured(false);
       setTrending(false);
       setSizes(["A3", "A4", "A5", "A6"]);
+      setFinishType("matte");
       setImages(null);
       // reload admin product list
       reloadProducts();
@@ -283,6 +286,11 @@ export function AdminProductManager() {
             <select value={type} onChange={(e) => setType(e.target.value as "poster" | "sticker")} className="input">
               <option value="poster">Poster</option>
               <option value="sticker">Sticker</option>
+            </select>
+            <select value={finishType} onChange={(e) => setFinishType(e.target.value as "matte" | "glossy" | "both")} className="input">
+              <option value="matte">Matte Finish</option>
+              <option value="glossy">Glossy Finish</option>
+              <option value="both">Both (Matte & Glossy)</option>
             </select>
             <input value={dimensions} onChange={(e) => setDimensions(e.target.value)} placeholder="Dimensions *" className="input" />
             <input value={materialQuality} onChange={(e) => setMaterialQuality(e.target.value)} placeholder="Material quality *" className="input" />

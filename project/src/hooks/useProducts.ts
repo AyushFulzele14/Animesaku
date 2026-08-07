@@ -16,6 +16,7 @@ interface RawProduct {
   description: string;
   featured?: boolean;
   trending?: boolean;
+  finishType?: 'matte' | 'glossy' | 'both';
 }
 
 function normalizeProductList(data: unknown): RawProduct[] {
@@ -57,6 +58,7 @@ export function useProducts() {
           description: item.description,
           featured: item.featured,
           trending: item.trending,
+          finishType: item.finishType || 'matte',
         };
       });
       setProducts(mapped);

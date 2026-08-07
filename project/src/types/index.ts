@@ -13,6 +13,7 @@ export interface Product {
   featured?: boolean;
   trending?: boolean;
   sizes?: string[];
+  finishType?: "matte" | "glossy" | "both";
 }
 
 export interface Collection {

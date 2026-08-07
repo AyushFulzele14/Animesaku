@@ -1,69 +1,100 @@
-import { useState, useMemo } from 'react';
-import { Search, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, X, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Product } from '../types';
 import { formatINR } from '../utils/currency';
-
-const MOCK_PRODUCTS: Product[] = [
-  {
-    id: '1',
-    title: 'Sakura Night Poster',
-    animeName: 'Naruto',
-    price: 24.99,
-    discountPrice: 0,
-    image: 'https://images.pexels.com/photos/3587620/pexels-photo-3587620.jpeg?w=400&h=400&fit=crop',
-    category: 'Posters',
-    type: 'poster',
-    rating: 5,
-    reviews: 124,
-    description: 'Premium glossy poster with neon sakura design',
-  },
-  {
-    id: '2',
-    title: 'Anime Sticker Pack',
-    animeName: 'One Piece',
-    price: 9.99,
-    discountPrice: 0,
-    image: 'https://images.pexels.com/photos/3616956/pexels-photo-3616956.jpeg?w=400&h=400&fit=crop',
-    category: 'Stickers',
-    type: 'sticker',
-    rating: 4.8,
-    reviews: 342,
-    description: 'Set of 50 premium holographic anime stickers',
-  },
-  {
-    id: '3',
-    title: 'Moonlight Poster',
-    animeName: 'Demon Slayer',
-    price: 27.99,
-    discountPrice: 0,
-    image: 'https://images.pexels.com/photos/14013402/pexels-photo-14013402.jpeg?w=400&h=400&fit=crop',
-    category: 'Posters',
-    type: 'poster',
-    rating: 4.9,
-    reviews: 210,
-    description: 'Limited edition anime poster with moonlit cityscape',
-  },
-];
+import { api, resolveAssetUrl } from '../lib/api';
 
 interface LiveSearchProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+interface RawProduct {
+  _id: string;
+  title: string;
+  animeName: string;
+  price: number;
+  discountPrice?: number;
+  images?: Array<{ url: string }>;
+  category?: { name?: string } | string;
+  type: 'poster' | 'sticker';
+  ratings: number;
+  numOfReviews: number;
+  description: string;
+  featured?: boolean;
+  trending?: boolean;
+}
+
+function normalizeProductList(data: unknown): RawProduct[] {
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === 'object' && 'products' in data && Array.isArray((data as { products: RawProduct[] }).products)) {
+    return (data as { products: RawProduct[] }).products;
+  }
+  return [];
+}
+
 export function LiveSearch({ isOpen, onClose }: LiveSearchProps) {
   const [query, setQuery] = useState('');
+  const [results, setResults] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const results = useMemo(() => {
-    if (!query.trim()) return [];
-    return MOCK_PRODUCTS.filter(
-      (product) =>
-        product.title.toLowerCase().includes(query.toLowerCase()) ||
-        product.animeName.toLowerCase().includes(query.toLowerCase()) ||
-        product.description.toLowerCase().includes(query.toLowerCase()) ||
-        product.category.toLowerCase().includes(query.toLowerCase())
-    ).slice(0, 5);
+  useEffect(() => {
+    if (!isOpen) {
+      setQuery('');
+      setResults([]);
+      setLoading(false);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!query.trim()) {
+      setResults([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    const delayDebounceFn = setTimeout(async () => {
+      try {
+        const raw = await api.get<unknown>(`/products?keyword=${encodeURIComponent(query)}&limit=10`);
+        const list = normalizeProductList(raw);
+        const mapped = list.map((item) => {
+          const categoryName =
+            typeof item.category === 'string' ? item.category : item.category?.name || item.type;
+          return {
+            id: item._id,
+            title: item.title,
+            animeName: item.animeName,
+            price: item.price,
+            discountPrice: item.discountPrice,
+            image: resolveAssetUrl(item.images?.[0]?.url),
+            category: categoryName,
+            type: item.type,
+            rating: item.ratings || 0,
+            reviews: item.numOfReviews || 0,
+            description: item.description,
+          };
+        });
+        setResults(mapped);
+      } catch (err) {
+        console.error("Search failed:", err);
+      } finally {
+        setLoading(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
   }, [query]);
+
+  const handleProductClick = (productId: string) => {
+    window.dispatchEvent(
+      new CustomEvent('open-product-details', {
+        detail: { productId },
+      })
+    );
+    onClose();
+  };
 
   return (
     <AnimatePresence>
@@ -93,6 +124,7 @@ export function LiveSearch({ isOpen, onClose }: LiveSearchProps) {
                   autoFocus
                   className="flex-1 bg-transparent text-silver-white placeholder-silver-white/50 outline-none"
                 />
+                {loading && <Loader2 className="w-5 h-5 text-primary-red animate-spin" />}
                 <button
                   onClick={onClose}
                   className="p-1 hover:bg-primary-red/20 rounded transition-colors"
@@ -117,6 +149,10 @@ export function LiveSearch({ isOpen, onClose }: LiveSearchProps) {
                           animate={{ x: 0, opacity: 1 }}
                           transition={{ delay: index * 0.05 }}
                           href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleProductClick(product.id);
+                          }}
                           className="flex gap-3 px-4 py-3 hover:bg-primary-red/10 border-b border-primary-red/20 transition-colors"
                         >
                           <img
@@ -144,7 +180,7 @@ export function LiveSearch({ isOpen, onClose }: LiveSearchProps) {
                 )}
               </AnimatePresence>
 
-              {query && results.length === 0 && (
+              {query && !loading && results.length === 0 && (
                 <div className="px-4 py-8 text-center text-silver-white/60">
                   No products found for "{query}"
                 </div>
